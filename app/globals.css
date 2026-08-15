@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --bg-from: #eef7f6;
+  --bg-to: #fdf3ec;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  font-family:
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
+    system-ui, -apple-system, sans-serif;
+  background: linear-gradient(160deg, var(--bg-from) 0%, var(--bg-to) 100%);
+  background-attachment: fixed;
+  color: #334155;
+}
+
+/* 便签纸 */
+.note-paper {
+  position: relative;
+  background: linear-gradient(180deg, #fffdf4 0%, #fff8e1 100%);
+  border-radius: 0.75rem;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(180, 140, 60, 0.08);
+}
+
+.note-paper::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 96px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.55);
+  border-left: 1px dashed rgba(148, 163, 184, 0.4);
+  border-right: 1px dashed rgba(148, 163, 184, 0.4);
+}
+
+/* 聊天气泡 */
+.bubble-user {
+  border-radius: 1rem 1rem 0.25rem 1rem;
+}
+.bubble-ai {
+  border-radius: 1rem 1rem 1rem 0.25rem;
+}
+
+/* 打字中的三个点 */
+@keyframes typing-dot {
+  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-3px); }
+}
+.typing-dot {
+  animation: typing-dot 1.2s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* 卡片进入动画 */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up {
+  animation: fade-up 0.35s ease-out both;
+}
