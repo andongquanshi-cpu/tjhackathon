@@ -5,8 +5,8 @@ type Variant = "host" | "reader" | SchoolId;
 const marks: Record<Variant, string> = {
   host: "愈",
   reader: "我",
-  humanistic: "暖",
-  psychodynamic: "镜",
+  humanistic: "镜",
+  psychodynamic: "暖",
   cognitive: "思",
   postmodern: "叙",
 };
@@ -14,8 +14,8 @@ const marks: Record<Variant, string> = {
 const tones: Record<Variant, string> = {
   host: "xiaoyu-host",
   reader: "xiaoyu-reader",
-  humanistic: "xiaoyu-warm",
-  psychodynamic: "xiaoyu-mirror",
+  humanistic: "xiaoyu-mirror",
+  psychodynamic: "xiaoyu-warm",
   cognitive: "xiaoyu-think",
   postmodern: "xiaoyu-story",
 };

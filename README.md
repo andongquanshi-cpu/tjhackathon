@@ -9,18 +9,18 @@
 ```
 
 - 小愈本体：正念/ACT 整合视角的引导者 🌱
-- 四个流派衍生形态：
-  - 小愈·暖（人本主义）
-  - 小愈·镜（精神分析 / 心理动力学）
-  - 小愈·思（认知行为）
-  - 小愈·叙（后现代主义 · 叙事疗法/焦点解决）
-- 画像蒸馏：每次深聊后，AI 将对话提炼为结构化画像增量（核心议题/认知模式/优势/维度变化），不存原始对话，省 token、保护隐私
+- 四位流派导师（与落地页设计保持一致）：
+  - 西格蒙德·弗洛伊德（精神分析）：关注无意识冲突、早期经验与重复出现的关系模式，帮助用户理解情绪和行为的来处。
+  - 卡尔·罗杰斯（人本主义）：以共情、真诚和无条件积极关注为核心，先让用户感到被理解，再陪伴其发现自身成长力量。
+  - 阿尔伯特·班杜拉（社会认知理论）：关注观察学习、自我效能感以及个人、行为与环境的交互，帮助用户看见可学习、可行动的改变路径。
+  - B.F. 斯金纳（行为主义）：关注可观察行为、环境刺激与行为后果，通过识别强化模式和设计小步练习，促进具体行为改变。
+- 画像蒸馏：每次深聊后，AI 将对话提炼为结构化画像增量（核心议题/认知模式/优势/维度变化）
 
 ## 技术栈
 
 - Next.js 15（App Router）+ React 19 + TypeScript + Tailwind CSS v4
 - 数据层：本地 JSON 文件存储（`.data/db.json`），MVP 够用，后续可换 SQLite/Postgres
-- AI 层：DeepSeek（OpenAI 兼容协议），配置见下
+- AI 层：四个独立 FastAPI 导师服务 + OpenAI-compatible 模型；Next.js 负责安全前置、四路并发和单路降级
 
 ## 快速开始
 
@@ -39,11 +39,27 @@ npm run dev
 AI_BASE_URL=https://api.deepseek.com/v1   # 兼容 OpenAI 协议，可换成其他厂商
 AI_API_KEY=sk-xxx
 AI_MODEL=deepseek-chat
+AGENT_A_URL=http://127.0.0.1:8101
+AGENT_B_URL=http://127.0.0.1:8102
+AGENT_C_URL=http://127.0.0.1:8103
+AGENT_D_URL=http://127.0.0.1:8104
+AGENT_TIMEOUT_MS=20000
 DEMO_MODE=1
 ```
 
-- 已配置 key：四流派评论、深聊、画像蒸馏、阶段总结全部走真实 LLM
-- 未配置 key：自动退回内置模板兜底（仅保证流程不中断，演示前请务必配置）
+- A/B/C/D 固定对应弗洛伊德、罗杰斯、班杜拉、斯金纳，端口依次为 8101–8104。
+- A、C 使用各自 RAG；B 在合格人本文献入库前为 no-rag；D 只调用斯金纳 Skill。B/D 中遗留的精神分析语料已隔离，不参与 `/respond`。
+- 任一服务未配置、超时或返回错误时，只降级该导师到 Next.js 通用模型或本地模板，不阻断其他三路。
+- S3 危机输入会在 Next.js 共享安全层短路，不进入四导师自由生成；S1/S2 会传给导师服务作为回应约束。
+
+四个 Python 服务分别在 `agents/a`、`agents/b`、`agents/c`、`agents/d` 下启动。各目录先复制 `.env.example` 为 `.env` 并安装其依赖，再运行：
+
+```bash
+uvicorn src.api.main:app --host 127.0.0.1 --port 8101  # A
+uvicorn src.api.main:app --host 127.0.0.1 --port 8102  # B
+uvicorn src.api.main:app --host 127.0.0.1 --port 8103  # C
+uvicorn src.api.main:app --host 127.0.0.1 --port 8104  # D
+```
 
 > 安全提醒：`.env.local` 已在 .gitignore 中，不会提交；请勿把 API key 发到公开仓库或群里。
 
@@ -60,7 +76,9 @@ app/
   api/                   # 接口：assessment / notes / comments / chat / profile / summary / reset
 lib/
   personas.ts            # 小愈 + 四流派人格（system prompt + 安全红线）
-  agents.ts              # 评论生成 / 深聊 / 画像蒸馏（LLM + 兜底）
+  input-analysis.ts      # 共享安全等级、意图、主题与短输入补全
+  external-agents.ts     # 四导师 HTTP 契约、超时与返回校验
+  agents.ts              # 四路编排 / 单导师深聊 / 降级 / 画像蒸馏
   assessment.ts          # 量表与计分
   store.ts               # JSON 文件存储
   seed.ts                # 演示种子数据（仅便签，无 mock AI 内容）
@@ -73,9 +91,9 @@ components/
 
 - 单用户本地存储，无登录/多人数据；演示可点「清空数据 / 载入演示数据」
 - 测评量表为产品化简化版，非临床量表；AI 不诊断、不替代医生（persona 内含安全红线与危机引导）
-- 21 天为结构化日程（day 字段），暂无日历/打卡 UI；可随时补充
+- 单机 JSON 存储会保存便签和对话原文；生产部署前需补充账号隔离、加密、保留期限与删除机制
 - 画像蒸馏在 LLM 模式下由模型产出 JSON，启发式兜底；极端情况下维度变化以兜底为准
-- 并发调用四流派评论会产生 4 次 LLM 请求，注意 API 用量
+- 圆桌会并发调用四个导师服务，注意模型与向量检索用量
 ## 开发注意事项
 
 - 不要同时运行 

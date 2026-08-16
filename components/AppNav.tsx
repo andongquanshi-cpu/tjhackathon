@@ -6,7 +6,6 @@ import AuthControl from "./AuthControl";
 
 const LINKS = [
   { href: "/journal", label: "主界面" },
-  { href: "/guide", label: "每日导单" },
   { href: "/calendar", label: "21 天月历" },
   { href: "/profile", label: "画像" },
 ];

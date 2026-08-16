@@ -618,6 +618,7 @@ button:disabled {
 }
 
 .seat-bubble strong { font-size: 0.78rem; }
+.agent-status { display: block; margin-top: 0.2rem; color: #8a8276; font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .seat-bubble p { margin-top: 0.4rem; color: var(--muted); font-size: 0.75rem; line-height: 1.55; }
 .seat-arrow { position: absolute; top: -32px; left: 28px; font-size: 0.72rem; opacity: 0; transition: 160ms ease; }
 .mentor-seat:hover .seat-arrow, .mentor-seat.is-selected .seat-arrow { opacity: 1; transform: translateY(4px); }
@@ -1016,25 +1017,31 @@ button:disabled {
 .warm-home__portrait--freud .warm-home__beard::before { position: absolute; top: -7px; left: 11px; width: 26px; height: 12px; background: #e9e3d9; border: 2px solid var(--warm-ink); border-radius: 50%; content: ""; }
 .warm-home__portrait--freud .warm-home__mouth { z-index: 4; bottom: 17px; }
 
-/* 罗杰斯：光头、圆眼镜与更大的鼻子 */
+/* 罗杰斯：中间秃头、两侧短发、方框眼镜与大鼻子 */
 .warm-home__portrait--rogers .warm-home__face { border-radius: 52% 48% 48% 48%; }
-.warm-home__portrait--rogers .warm-home__hair { top: -3px; left: 17px; display: block; width: 30px; height: 8px; border-top: 3px solid #9b755c; border-radius: 50%; }
-.warm-home__portrait--rogers .warm-home__glasses { z-index: 4; top: 25px; left: 7px; display: block; width: 18px; height: 17px; border: 2px solid var(--warm-ink); border-radius: 50%; }
-.warm-home__portrait--rogers .warm-home__glasses::before { position: absolute; top: -2px; left: 29px; width: 18px; height: 17px; border: 2px solid var(--warm-ink); border-radius: 50%; content: ""; }
+.warm-home__portrait--rogers .warm-home__hair { z-index: 1; top: 15px; left: 4px; display: block; width: 6px; height: 10px; background: #9b755c; border-radius: 45% 15% 25% 50%; }
+.warm-home__portrait--rogers .warm-home__hair::before { position: absolute; top: 0; left: 50px; width: 6px; height: 10px; background: #9b755c; border-radius: 15% 45% 50% 25%; content: ""; }
+.warm-home__portrait--rogers .warm-home__hair::after { position: absolute; top: -7px; left: 14px; width: 31px; height: 11px; border-top: 2px solid rgba(81, 50, 41, .32); border-radius: 50%; content: ""; }
+.warm-home__portrait--rogers .warm-home__glasses { z-index: 4; top: 25px; left: 6px; display: block; width: 19px; height: 15px; border: 3px solid #302a27; border-radius: 3px; }
+.warm-home__portrait--rogers .warm-home__glasses::before { position: absolute; top: -3px; left: 30px; width: 19px; height: 15px; border: 3px solid #302a27; border-radius: 3px; content: ""; }
 .warm-home__portrait--rogers .warm-home__glasses::after { position: absolute; top: 7px; left: 18px; width: 11px; border-top: 2px solid var(--warm-ink); content: ""; }
 .warm-home__portrait--rogers .warm-home__nose { top: 40px; width: 14px; height: 18px; }
 .warm-home__portrait--rogers .warm-home__mouth { bottom: 10px; }
 
-/* 班杜拉：大鼻子与宽阔、方正的下颌线 */
-.warm-home__portrait--bandura .warm-home__face { width: 67px; height: 80px; border-radius: 47% 53% 34% 34% / 48% 50% 39% 39%; }
+/* 班杜拉：下方更宽的脸型、黑色扁矩形眼镜与大鼻子 */
+.warm-home__portrait--bandura { width: 110px; border-radius: 46% 54% 33% 33% / 56% 55% 43% 43%; }
+.warm-home__portrait--bandura .warm-home__face { width: 70px; height: 82px; border-radius: 47% 53% 29% 29% / 48% 50% 34% 34%; }
+.warm-home__portrait--bandura .warm-home__glasses { z-index: 4; top: 28px; left: 7px; display: block; width: 20px; height: 9px; background: rgba(48, 42, 39, .05); border: 3px solid #302a27; border-radius: 2px; }
+.warm-home__portrait--bandura .warm-home__glasses::before { position: absolute; top: -3px; left: 31px; width: 20px; height: 9px; background: rgba(48, 42, 39, .05); border: 3px solid #302a27; border-radius: 2px; content: ""; }
+.warm-home__portrait--bandura .warm-home__glasses::after { position: absolute; top: 3px; left: 20px; width: 12px; border-top: 3px solid #302a27; content: ""; }
 .warm-home__portrait--bandura .warm-home__nose { top: 37px; width: 15px; height: 20px; }
 .warm-home__portrait--bandura .warm-home__chin { display: none; }
 .warm-home__portrait--bandura .warm-home__mouth { bottom: 13px; width: 15px; }
 
-/* 斯金纳：高额头、两侧发际与大鼻子 */
-.warm-home__portrait--skinner .warm-home__face { height: 82px; border-radius: 48% 52% 46% 54% / 56% 56% 44% 44%; }
-.warm-home__portrait--skinner .warm-home__hair { z-index: 2; top: -5px; left: 5px; display: block; width: 54px; height: 30px; border-top: 7px solid #8d674f; border-left: 5px solid #8d674f; border-right: 5px solid #8d674f; border-radius: 48% 48% 0 0; }
-.warm-home__portrait--skinner .warm-home__hair::after { position: absolute; top: 0; left: 12px; width: 23px; height: 18px; background: #ebc9ad; border-radius: 50% 50% 35% 35%; content: ""; }
+/* 斯金纳：后移发际线、蓬松微卷后发与大鼻子 */
+.warm-home__portrait--skinner::before { position: absolute; z-index: 0; top: 5px; left: 18px; width: 69px; height: 75px; background: #8d674f; border: 2px solid var(--warm-ink); border-radius: 52% 58% 49% 47% / 45% 52% 48% 56%; box-shadow: 4px 6px 0 rgba(81, 50, 41, .1); content: ""; }
+.warm-home__portrait--skinner .warm-home__face { z-index: 1; height: 82px; border-radius: 48% 52% 46% 54% / 56% 56% 44% 44%; }
+.warm-home__portrait--skinner .warm-home__hair { display: none; }
 .warm-home__portrait--skinner .warm-home__nose { top: 40px; width: 15px; height: 20px; }
 .warm-home__mentor strong { margin-top: 0.45rem; font-family: ui-serif, Georgia, "Songti SC", serif; font-size: 1rem; }
 .warm-home__mentor small { margin-top: 0.15rem; font-size: 0.65rem; letter-spacing: 0.06em; }
@@ -1130,6 +1137,12 @@ button:disabled {
 .journey-dashboard__card::after { position: absolute; right: -25px; bottom: -36px; width: 125px; height: 125px; border: 2px solid rgba(81, 50, 41, .22); border-radius: 50%; content: ""; }
 .journey-dashboard__assessment { background: linear-gradient(145deg, #d8ebf9, #e9f1f3); border-radius: 26px 20px 30px 24px / 18px 26px 20px 30px; }
 .journey-dashboard__mindfulness { background: linear-gradient(145deg, #d7d4b1, #e8e4c8); border-radius: 23px 31px 20px 29px / 28px 18px 29px 21px; }
+.journey-dashboard__feature { min-height: 185px; padding: clamp(1.25rem, 2vw, 1.8rem); }
+.journey-dashboard__feature--meditation { background: linear-gradient(145deg, #d8ebf9, #e9f1f3); border-radius: 26px 20px 30px 24px / 18px 26px 20px 30px; }
+.journey-dashboard__feature--woodfish { background: linear-gradient(145deg, #f1dfbd, #f5ead4); border-radius: 20px 29px 23px 27px / 26px 19px 30px 22px; }
+.journey-dashboard__feature--breathing { background: linear-gradient(145deg, #d7d4b1, #e8e4c8); border-radius: 23px 31px 20px 29px / 28px 18px 29px 21px; }
+.journey-dashboard__feature--classroom { background: linear-gradient(145deg, #ead7d2, #f1e5df); border-radius: 29px 22px 28px 19px / 20px 30px 21px 27px; }
+.journey-dashboard__feature .journey-dashboard__card-button:disabled { cursor: default; opacity: .58; }
 .journey-dashboard__card h2 { margin-top: 1.2rem; font-family: ui-serif, Georgia, "Songti SC", serif; font-size: clamp(1.6rem, 2.4vw, 2.3rem); }
 .journey-dashboard__card p { max-width: 370px; margin-top: .7rem; color: rgba(81, 50, 41, .78); font-size: .85rem; line-height: 1.7; }
 .journey-dashboard__card-button, .journey-dashboard__text-link { position: relative; z-index: 1; padding: .7rem 1rem; border: 1.5px solid var(--journey-ink); border-radius: 999px; font-family: ui-serif, Georgia, "Songti SC", serif; font-size: .82rem; transition: background 160ms ease, color 160ms ease; }
@@ -1149,17 +1162,50 @@ button:disabled {
 .journey-dashboard__hanging .xiaoyu-avatar { width: 82px; height: 82px; background: #f2d9c8; border-color: var(--journey-ink); transform: rotate(180deg); }
 .journey-dashboard__rope { width: 2px; height: 48px; background: repeating-linear-gradient(180deg, var(--journey-ink) 0 5px, transparent 6px 8px); }
 .journey-dashboard__hanging-hint { margin-top: .35rem; padding: .28rem .5rem; background: rgba(244, 241, 226, .88); font-size: .62rem; white-space: nowrap; }
-.journey-dashboard__scroll { position: absolute; z-index: 2; top: 100px; right: clamp(1.5rem, 5vw, 5rem); width: min(285px, 38vw); padding: 1.2rem 1.4rem; background: #fff9e7; border: 2px solid var(--journey-ink); border-radius: 8px 12px 9px 11px; box-shadow: 5px 6px 0 rgba(81, 50, 41, .1); }
+.journey-dashboard__scroll { position: absolute; z-index: 2; top: 100px; right: clamp(1.5rem, 5vw, 5rem); width: min(520px, 58vw); max-height: calc(100vh - 130px); padding: 1.5rem 1.7rem; overflow-y: auto; background: #fff9e7; border: 2px solid var(--journey-ink); border-radius: 8px 12px 9px 11px; box-shadow: 5px 6px 0 rgba(81, 50, 41, .1); }
 .journey-dashboard__scroll::before, .journey-dashboard__scroll::after { position: absolute; right: -7px; left: -7px; height: 13px; background: #ead5a8; border: 2px solid var(--journey-ink); border-radius: 50%; content: ""; }
 .journey-dashboard__scroll::before { top: -8px; } .journey-dashboard__scroll::after { bottom: -8px; }
 .journey-dashboard__scroll > span, .journey-dashboard__scroll strong { position: relative; z-index: 1; display: block; }
 .journey-dashboard__scroll > span { font-size: .61rem; letter-spacing: .12em; }.journey-dashboard__scroll strong { margin-top: .4rem; font-family: ui-serif, Georgia, "Songti SC", serif; }
-.journey-dashboard__scroll ol { position: relative; z-index: 1; display: grid; gap: .5rem; margin: .9rem 0; padding-left: 1.1rem; font-size: .76rem; }
-.journey-dashboard__scroll li { padding-left: .1rem; }.journey-dashboard__scroll li small { margin-left: .4rem; color: rgba(81, 50, 41, .65); font-size: .6rem; }
-.journey-dashboard__scroll a { position: relative; z-index: 1; border-bottom: 1px solid var(--journey-ink); font-size: .7rem; }
+.journey-dashboard__scroll-heading { position: relative; z-index: 1; display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-top: .35rem; }
+.journey-dashboard__scroll-heading strong { margin: 0; font-size: 1.05rem; }
+.journey-dashboard__scroll-heading > small { flex: 0 0 auto; color: rgba(81, 50, 41, .65); font-size: .66rem; }
+.journey-dashboard__scroll > p { position: relative; z-index: 1; margin-top: .6rem; color: rgba(81, 50, 41, .68); font-size: .72rem; line-height: 1.6; }
+.journey-dashboard__scroll-tasks { position: relative; z-index: 1; display: grid; gap: .65rem; margin-top: 1rem; }
+.journey-dashboard__scroll-tasks button { display: grid; grid-template-columns: 25px 1fr; gap: .7rem; width: 100%; align-items: center; padding: .8rem .9rem; border: 1px solid rgba(81, 50, 41, .35); border-radius: 10px; text-align: left; transition: background 160ms ease, opacity 160ms ease; }
+.journey-dashboard__scroll-tasks button:hover { background: rgba(234, 213, 168, .3); }
+.journey-dashboard__scroll-tasks button:disabled { cursor: wait; opacity: .72; }
+.journey-dashboard__scroll-tasks button.is-complete { background: rgba(215, 212, 177, .38); }
+.journey-dashboard__scroll-check { display: grid; width: 22px; height: 22px; place-items: center; border: 1.5px solid var(--journey-ink); border-radius: 50%; font-size: .7rem; }
+.journey-dashboard__scroll-tasks button.is-complete .journey-dashboard__scroll-check { color: #fffdf4; background: var(--journey-ink); }
+.journey-dashboard__scroll-tasks b { display: block; font-family: ui-serif, Georgia, "Songti SC", serif; font-size: .82rem; }
+.journey-dashboard__scroll-tasks small { display: block; margin-top: .2rem; color: rgba(81, 50, 41, .6); font-size: .61rem; }
+.journey-dashboard__scroll-message { padding: .65rem .8rem; background: rgba(215, 212, 177, .34); border-radius: 8px; }
 .journey-dashboard__intro-backdrop { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 1rem; background: rgba(81, 50, 41, .36); }
 .journey-dashboard__intro { width: min(440px, 92vw); padding: clamp(1.8rem, 5vw, 3rem); background: #fffdf4; border: 2px solid var(--journey-ink); border-radius: 28px 23px 31px 24px; box-shadow: 8px 9px 0 rgba(81, 50, 41, .15); text-align: center; }
 .journey-dashboard__intro .xiaoyu-avatar { margin: 0 auto 1rem; background: #f2d9c8; border-color: var(--journey-ink); }.journey-dashboard__intro h2 { margin-top: .7rem; font-family: ui-serif, Georgia, "Songti SC", serif; font-size: 1.8rem; line-height: 1.35; }.journey-dashboard__intro p { margin-top: .8rem; color: rgba(81, 50, 41, .72); font-size: .82rem; line-height: 1.7; }.journey-dashboard__intro > div { display: flex; gap: .9rem; justify-content: center; margin-top: 1.5rem; }.journey-dashboard__intro button { border-bottom: 1px solid var(--journey-ink); font-size: .75rem; }
 .day-detail-form-heading { padding-bottom: 2rem; border-bottom: 2px solid var(--ink); }.day-detail-form-heading h2 { margin-top: .7rem; font-family: ui-serif, Georgia, "Songti SC", serif; font-size: clamp(1.8rem, 3vw, 2.6rem); }.day-detail-form-heading p { max-width: 580px; margin-top: .65rem; color: var(--muted); font-size: .85rem; line-height: 1.7; }
-@media (max-width: 850px) { .journey-dashboard__layout { grid-template-columns: 1fr; }.journey-dashboard__records { min-height: auto; border-right: 0; border-bottom: 2px solid rgba(81, 50, 41, .3); }.journey-dashboard__mentor-stack { margin-top: 2rem; }.journey-dashboard__main { min-height: auto; }.journey-dashboard__hanging { right: 5vw; }.journey-dashboard__scroll { right: 5vw; width: 280px; } }
-@media (max-width: 560px) { .journey-dashboard__main { grid-template-columns: 1fr; padding-top: 7rem; }.journey-dashboard__card { min-height: 210px; }.journey-dashboard__generate { grid-column: auto; }.journey-dashboard__records { padding: 2rem 5vw; }.journey-dashboard__hanging { right: 6vw; }.journey-dashboard__scroll { top: 92px; width: min(280px, 82vw); }.journey-dashboard__intro > div { align-items: center; flex-direction: column; }.journey-dashboard__record { grid-template-columns: 43px 1fr; }.journey-dashboard__record b { display: none; } }
+@media (max-width: 850px) { .journey-dashboard__layout { grid-template-columns: 1fr; }.journey-dashboard__records { min-height: auto; border-right: 0; border-bottom: 2px solid rgba(81, 50, 41, .3); }.journey-dashboard__mentor-stack { margin-top: 2rem; }.journey-dashboard__main { min-height: auto; }.journey-dashboard__hanging { right: 5vw; }.journey-dashboard__scroll { right: 5vw; width: min(520px, 84vw); } }
+@media (max-width: 560px) { .journey-dashboard__main { grid-template-columns: 1fr; padding-top: 7rem; }.journey-dashboard__card { min-height: 210px; }.journey-dashboard__generate { grid-column: auto; }.journey-dashboard__records { padding: 2rem 5vw; }.journey-dashboard__hanging { right: 6vw; }.journey-dashboard__scroll { top: 92px; width: min(420px, 88vw); padding: 1.25rem; }.journey-dashboard__intro > div { align-items: center; flex-direction: column; }.journey-dashboard__record { grid-template-columns: 43px 1fr; }.journey-dashboard__record b { display: none; } }
+
+/* 所有页面统一使用落地页的底色与纸张纹理 */
+body,
+.warm-home,
+.landing-shell,
+.assessment-shell,
+.journey-dashboard,
+.roundtable-page,
+.feedback-page,
+.feedback-shell,
+.guide-page,
+.calendar-page,
+.day-detail-page,
+.profile-page,
+.summary-page {
+  background:
+    radial-gradient(circle at 18% 16%, rgba(245, 232, 159, 0.32), transparent 23rem),
+    radial-gradient(circle at 84% 74%, rgba(216, 235, 249, 0.34), transparent 26rem),
+    linear-gradient(90deg, rgba(81, 50, 41, 0.022) 1px, transparent 1px),
+    #f4f1e2;
+  background-size: auto, auto, 25px 25px, auto;
+}

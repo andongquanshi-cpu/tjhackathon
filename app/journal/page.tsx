@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Note, Profile } from "@/lib/types";
+import type { DailyGuideProgress, Note, Profile } from "@/lib/types";
 import { dailyGuide } from "@/lib/prompts";
 import XiaoyuAvatar from "@/components/XiaoyuAvatar";
 import AppNav from "@/components/AppNav";
@@ -15,6 +15,33 @@ const MOOD = [
   { v: 4, e: "暖", label: "不错" },
   { v: 5, e: "晴", label: "晴朗" },
 ];
+
+const FEATURE_MODULES = [
+  {
+    id: "meditation",
+    eyebrow: "MINDFULNESS",
+    title: "正念冥想",
+    description: "把注意力轻轻带回当下，给自己一段安静停留的时间。",
+  },
+  {
+    id: "woodfish",
+    eyebrow: "GENTLE WISH",
+    title: "木鱼祈愿",
+    description: "跟随缓慢的节奏，放下一份心愿，也放松片刻。",
+  },
+  {
+    id: "breathing",
+    eyebrow: "BREATHE",
+    title: "呼吸练习",
+    description: "用几分钟感受呼吸，让身体从紧绷中慢慢松开。",
+  },
+  {
+    id: "classroom",
+    eyebrow: "MICRO CLASS",
+    title: "心理微课堂",
+    description: "用轻量的小知识，理解情绪、关系与内在模式。",
+  },
+] as const;
 
 export default function JournalPage() {
   const router = useRouter();
@@ -30,6 +57,9 @@ export default function JournalPage() {
   const [ready, setReady] = useState(false);
   const [showFirstGuide, setShowFirstGuide] = useState(false);
   const [scrollOpen, setScrollOpen] = useState(false);
+  const [guideCompleted, setGuideCompleted] = useState<string[]>([]);
+  const [guideSaving, setGuideSaving] = useState(false);
+  const [guideMessage, setGuideMessage] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -40,6 +70,13 @@ export default function JournalPage() {
       const [notesData, profileData] = await Promise.all([notesRes.json(), profileRes.json()]);
       setNotes(notesData.notes ?? []);
       setProfile(profileData.profile ?? null);
+      const fetchedProfile = profileData.profile as Profile | null;
+      const fetchedDay = fetchedProfile
+        ? Math.min(21, Math.floor((Date.now() - new Date(fetchedProfile.createdAt).getTime()) / 86_400_000) + 1)
+        : 1;
+      const guideRes = await fetch(`/api/guides/${fetchedDay}/progress`);
+      const guideData = await guideRes.json();
+      setGuideCompleted((guideData.progress as DailyGuideProgress | null)?.completedTaskIds ?? []);
       if (!profileData.profile && !window.localStorage.getItem("yuxingxiang-journal-intro-seen")) {
         setShowFirstGuide(true);
       }
@@ -81,6 +118,32 @@ export default function JournalPage() {
   const dismissFirstGuide = () => {
     window.localStorage.setItem("yuxingxiang-journal-intro-seen", "true");
     setShowFirstGuide(false);
+  };
+  const toggleGuideTask = async (taskId: string) => {
+    if (guideSaving) return;
+    const previous = guideCompleted;
+    const next = previous.includes(taskId)
+      ? previous.filter((id) => id !== taskId)
+      : [...previous, taskId];
+    setGuideCompleted(next);
+    setGuideSaving(true);
+    setGuideMessage("");
+    try {
+      const response = await fetch(`/api/guides/${day}/progress`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completedTaskIds: next }),
+      });
+      if (!response.ok) throw new Error("save failed");
+      if (next.length === guide.tasks.length) {
+        setGuideMessage("今天的小事都完成了。已经很好，不需要做到完美。");
+      }
+    } catch {
+      setGuideCompleted(previous);
+      setGuideMessage("保存失败，请稍后再试。");
+    } finally {
+      setGuideSaving(false);
+    }
   };
 
   return (
@@ -154,35 +217,50 @@ export default function JournalPage() {
           {scrollOpen && (
             <aside className="journey-dashboard__scroll fade-up">
               <span>小愈带来的今日纸卷</span>
-              <strong>DAY {String(day).padStart(2, "0")} · {guide.theme}</strong>
-              <ol>
-                {guide.tasks.map((task) => <li key={task.id}>{task.title}<small>{task.duration}</small></li>)}
-              </ol>
-              <Link href={`/guide?day=${day}`}>去完成今日导单 →</Link>
+              <div className="journey-dashboard__scroll-heading">
+                <strong>DAY {String(day).padStart(2, "0")} · {guide.theme}</strong>
+                <small>{guideCompleted.length}/{guide.tasks.length} 已完成</small>
+              </div>
+              <p>{guide.subtitle}</p>
+              <div className="journey-dashboard__scroll-tasks">
+                {guide.tasks.map((task) => {
+                  const checked = guideCompleted.includes(task.id);
+                  return (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => toggleGuideTask(task.id)}
+                      disabled={guideSaving}
+                      className={checked ? "is-complete" : ""}
+                    >
+                      <span className="journey-dashboard__scroll-check">{checked ? "✓" : ""}</span>
+                      <span>
+                        <b>{task.title}</b>
+                        <small>{task.part} · {task.duration}</small>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {guideMessage && <p className="journey-dashboard__scroll-message">{guideMessage}</p>}
             </aside>
           )}
 
-          <section className="journey-dashboard__card journey-dashboard__assessment">
-            <span className="eyebrow">INNER COMPASS</span>
-            <div>
-              <h2>测量量表</h2>
-              <p>{profile ? "你的初始测量已完成。可以随时回看它留下的内心画像。" : "用一份小表格，为这段旅程找到开始的位置。"}</p>
-            </div>
-            {profile ? (
-              <Link href="/profile" className="journey-dashboard__text-link">查看我的画像 →</Link>
-            ) : (
-              <Link href="/assessment" className="journey-dashboard__card-button">开始测量 →</Link>
-            )}
-          </section>
-
-          <section className="journey-dashboard__card journey-dashboard__mindfulness">
-            <span className="eyebrow">MINDFULNESS MOMENT</span>
-            <div>
-              <h2>冥想与正念</h2>
-              <p>今天的主题是「{guide.theme}」。用几分钟，回到呼吸、身体和当下。</p>
-            </div>
-            <Link href={`/guide?day=${day}`} className="journey-dashboard__card-button">立即开始 →</Link>
-          </section>
+          {FEATURE_MODULES.map((feature) => (
+            <section
+              key={feature.id}
+              className={`journey-dashboard__card journey-dashboard__feature journey-dashboard__feature--${feature.id}`}
+            >
+              <span className="eyebrow">{feature.eyebrow}</span>
+              <div>
+                <h2>{feature.title}</h2>
+                <p>{feature.description}</p>
+              </div>
+              <button type="button" className="journey-dashboard__card-button" disabled>
+                即将开放
+              </button>
+            </section>
+          ))}
 
           <Link href={`/calendar/${day}`} className="journey-dashboard__generate">
             <span>
@@ -237,7 +315,7 @@ export default function JournalPage() {
                 ))}
               </div>
               <button onClick={save} disabled={!content.trim() || saving} className="primary-pill">
-                {saving ? "正在保存…" : "邀请导师入席 →"}
+                {saving ? "正在保存…" : "写好了，听听回应 →"}
               </button>
             </div>
             {error && <p className="mt-4 text-sm text-rose-700">{error}</p>}

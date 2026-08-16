@@ -15,13 +15,13 @@ type Props = {
 };
 
 const HOME_MENTORS = {
-  humanistic: {
+  psychodynamic: {
     name: "西格蒙德·弗洛伊德",
     school: "精神分析",
     description: "强调童年性本能与无意识冲突，人格由本我、自我、超我构成。",
     feature: "freud",
   },
-  psychodynamic: {
+  humanistic: {
     name: "卡尔·罗杰斯",
     school: "人本主义",
     description: "坚信人的“自我实现”倾向，主张以无条件的积极关注和共情来促进来访者成长。",
@@ -52,12 +52,6 @@ export default function HomeLanding({ mentors, hasProfile, day, notesCount }: Pr
     <main className="warm-home">
       <header className="warm-home__nav">
         <AuthControl />
-        <nav aria-label="主导航">
-          <Link href="/" aria-current="page">首页</Link>
-          <Link href={planHref}>21 天计划</Link>
-          <Link href="/journal">便利贴</Link>
-          <Link href={roundtableHref}>圆桌会谈</Link>
-        </nav>
       </header>
 
       <section className="warm-home__layout">

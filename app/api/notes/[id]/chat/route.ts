@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { chatWithSchool, distillAfterChat } from "@/lib/agents";
 import { SCHOOL_IDS } from "@/lib/personas";
+import { evaluateRisk } from "@/lib/risk";
 import { getNote, getProfile, setProfile, updateNote } from "@/lib/store";
 import type { ChatMessage, SchoolId } from "@/lib/types";
 
@@ -26,7 +27,27 @@ export async function POST(
   const history: ChatMessage[] = note.conversations[school] ?? [];
 
   const userMsg: ChatMessage = { role: "user", school, content: message, createdAt: now };
-  const replyText = await chatWithSchool({
+  const risk = evaluateRisk(`${note.content}\n${message}`, getProfile());
+  if (risk?.level === "crisis") {
+    const safeReply: ChatMessage = {
+      role: "assistant",
+      school,
+      content: `${risk.message}${risk.resources?.length ? `\n${risk.resources.join("；")}` : ""}`,
+      createdAt: new Date().toISOString(),
+      skills: ["crisis-safety-response"],
+      sources: [],
+      degraded: false,
+    };
+    const messages = [...history, userMsg, safeReply];
+    updateNote(id, {
+      risk,
+      selectedSchool: school,
+      conversations: { ...note.conversations, [school]: messages },
+    });
+    return NextResponse.json({ reply: safeReply, risk, safetyShortCircuit: true });
+  }
+
+  const reply = await chatWithSchool({
     note,
     school,
     history,
@@ -36,8 +57,12 @@ export async function POST(
   const replyMsg: ChatMessage = {
     role: "assistant",
     school,
-    content: replyText,
+    content: reply.content,
     createdAt: new Date().toISOString(),
+    agentId: reply.agentId,
+    skills: reply.skills,
+    sources: reply.sources,
+    degraded: reply.degraded,
   };
 
   const messages = [...history, userMsg, replyMsg];

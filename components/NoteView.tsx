@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSchool } from "@/lib/personas";
@@ -19,12 +19,15 @@ export default function NoteView({
   const router = useRouter();
   const [note, setNote] = useState(initialNote);
   const [, setProfile] = useState(initialProfile);
-  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsLoading, setCommentsLoading] = useState(!initialNote.comments);
+  const [commentsError, setCommentsError] = useState(false);
   const [chatSchool, setChatSchool] = useState<SchoolId | null>(initialNote.selectedSchool ?? null);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const commentsStarted = useRef(false);
+  const isCrisis = note.risk?.level === "crisis";
 
   const flash = (message: string) => {
     setNotice(message);
@@ -32,22 +35,32 @@ export default function NoteView({
   };
 
   const generateComments = async () => {
+    if (isCrisis) return;
     setCommentsLoading(true);
+    setCommentsError(false);
     try {
       const response = await fetch(`/api/notes/${note.id}/comments`, { method: "POST" });
       const data = await response.json();
       if (data.comments) {
         setNote((current) => ({ ...current, comments: data.comments }));
-        flash("四位导师已经入席");
       } else {
-        flash(data.error ?? "邀请失败，请重试");
+        if (data.risk) {
+          setNote((current) => ({ ...current, risk: data.risk }));
+        }
+        setCommentsError(true);
       }
     } catch {
-      flash("邀请失败，请重试");
+      setCommentsError(true);
     } finally {
       setCommentsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (initialNote.comments || initialNote.risk?.level === "crisis" || commentsStarted.current) return;
+    commentsStarted.current = true;
+    void generateComments();
+  }, []);
 
   const sendChat = async () => {
     if (!chatSchool || !input.trim() || sending) return;
@@ -155,11 +168,15 @@ export default function NoteView({
 
       {!note.comments ? (
         <section className="roundtable-start">
-          <div className="empty-table"><span>圆桌正在等待入席</span></div>
-          <h1>{commentsLoading ? "四位导师正在阅读你的记录……" : "准备好听见不同的声音了吗？"}</h1>
-          <button onClick={generateComments} disabled={commentsLoading} className="primary-pill">
-            {commentsLoading ? "正在邀请导师" : "邀请四位导师入席 →"}
-          </button>
+          <div className="empty-table">
+            <span>{isCrisis ? "现在先把你的安全放在第一位" : commentsError ? "回应暂时没有抵达" : "正在认真读你写下的这一刻"}</span>
+          </div>
+          <h1>{isCrisis ? "圆桌分析已暂停，请先联系现实中的支持" : commentsError ? "这次没有顺利听见回应" : "导师会晤中~"}</h1>
+          {commentsError && !isCrisis && (
+            <button onClick={generateComments} disabled={commentsLoading} className="primary-pill">
+              {commentsLoading ? "正在重新尝试…" : "重新听听回应 →"}
+            </button>
+          )}
         </section>
       ) : (
         <>
@@ -184,6 +201,9 @@ export default function NoteView({
                   <XiaoyuAvatar variant={comment.school} size="md" />
                   <div className="seat-bubble">
                     <strong>{persona.name} · {persona.school}</strong>
+                    <span className="agent-status">
+                      Agent {comment.agentId ?? "—"}{comment.degraded ? " · 备用通道" : ""}
+                    </span>
                     <p>{comment.text}</p>
                   </div>
                 </button>

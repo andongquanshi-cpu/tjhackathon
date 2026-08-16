@@ -17,6 +17,16 @@ export interface SchoolComment {
   school: SchoolId;
   text: string;
   createdAt: string;
+  agentId?: "A" | "B" | "C" | "D";
+  skills?: string[];
+  sources?: AgentSource[];
+  degraded?: boolean;
+}
+
+export interface AgentSource {
+  source: string;
+  text?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ChatMessage {
@@ -24,6 +34,10 @@ export interface ChatMessage {
   school: SchoolId;
   content: string;
   createdAt: string;
+  agentId?: "A" | "B" | "C" | "D";
+  skills?: string[];
+  sources?: AgentSource[];
+  degraded?: boolean;
 }
 
 export type RiskLevel = "gentle" | "concern" | "crisis";

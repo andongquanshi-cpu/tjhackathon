@@ -1,8 +1,11 @@
 import { chatCompletion, isLLMConfigured } from "./ai";
+import { analyzeInput } from "./input-analysis";
+import { callExternalAgent, getAgentId } from "./external-agents";
 import { getSchool, SCHOOLS, type SchoolPersona } from "./personas";
 import { DIM_META } from "./assessment";
 import type {
   ChatMessage,
+  AgentSource,
   DimKey,
   Note,
   Profile,
@@ -33,10 +36,10 @@ export function mockComment(persona: SchoolPersona, content: string): SchoolComm
       text = `「${s}」——你把它写下来的时候，我好奇：这种「停不下来」的感觉，是不是在更早的时候也出现过？那时候你多大？身边是谁？也许它不只是一次加班带来的累，而是一个老朋友式的模式。我们可以沿着它慢慢看看。`;
       break;
     case "cognitive":
-      text = `我在你写下的「${s}」里，捕捉到一个想法：「自己像一台机器」。我们一起来检验它：支持这个想法的证据是什么？有没有反例，比如今天某个瞬间你其实是自己的主人？如果最坏、最好、最可能的情况各是什么，你会怎么选一个更平衡的视角？`;
+      text = `你已经观察到「${s}」，这本身就是改变的起点。先不要求一次做好：选一个五分钟内能完成的小动作，并把环境提示放得更明显。完成一次，就是给“我做得到”增加一条新证据。`;
       break;
     case "postmodern":
-      text = `「${s}」——我想先把它和「你」分开来看：这个让你停不下来的东西，也许不该叫「你」，它可以有自己的名字。你有没有留意过，什么时候它不在？哪怕只有一小会儿。如果换一种讲法，你会怎么讲今天的自己？`;
+      text = `如果把「${s}」看作一段可观察的行为链，我们可以先找它发生前的提示，以及做完后立即得到的结果。只改一个环节：把目标缩到足够小，并在完成后立刻给自己清晰、温和的反馈。`;
       break;
   }
   return { school: persona.id, text, createdAt: now };
@@ -54,9 +57,9 @@ export function mockChatReply(
     case "psychodynamic":
       return `「${s}」——这让我更想和你一起看看：这种模式是从什么时候开始成为你的「默认设置」的？你提到过那种停不下来的感觉。试着回想一下，在你成长的过程里，有没有一个时刻，你觉得「我必须一直努力才安全」？`;
     case "cognitive":
-      return `你说了「${s}」，很好，这就是觉察的开始。我们接着用三个问题来检验这个想法：1) 证据是什么？2) 有没有反例？3) 如果好朋友陷入同样的想法，你会怎么帮他？你可以先只回答第一个，我陪你一步步来。`;
+      return `你说「${s}」，这说明你已经在观察自己的行动模式了。先选一个最容易成功的小步骤，把它缩到五分钟以内；然后想想，环境里放什么提示能让开始更容易？一次小成功会慢慢积累自我效能感。`;
     case "postmodern":
-      return `你说「${s}」。在叙事疗法里，我们相信你不是问题，问题才是问题。试着给它起个名字？然后我想问你一个关于「例外」的问题：过去这段时间，有没有哪一刻它没有控制你？那时你在做什么？`;
+      return `你说「${s}」。我们先把它写成可观察的行为：在什么提示出现后，你做了什么，紧接着得到了什么结果？找到这条链后，只替换一个环节，再给新行为安排一个即时、温和的反馈。`;
   }
 }
 
@@ -66,33 +69,94 @@ export async function generateComments(
   note: Note,
   profile: Profile | null
 ): Promise<SchoolComment[]> {
-  if (isLLMConfigured()) {
-    const results = await Promise.all(
-      SCHOOLS.map(async (persona) => {
+  const analysis = analyzeInput({
+    input: note.content,
+    noteContent: note.content,
+    profile,
+    storedRisk: note.risk,
+  });
+  const digest = profileDigest(profile);
+  const results = await Promise.allSettled(
+    SCHOOLS.map(async (persona) => {
+      try {
+        const external = await callExternalAgent({
+          school: persona.id,
+          analysis,
+          noteContent: note.content,
+          profileDigest: digest,
+        });
+        if (external) {
+          return {
+            school: persona.id,
+            text: external.response,
+            createdAt: new Date().toISOString(),
+            agentId: external.agentId,
+            skills: external.skills,
+            sources: external.sources,
+            degraded: external.degraded,
+          } satisfies SchoolComment;
+        }
+      } catch (err) {
+        console.error(`[agents] external ${getAgentId(persona.id)} fallback`, err);
+      }
+
+      if (isLLMConfigured()) {
         try {
           const text = await chatCompletion(
             [
               { role: "system", content: persona.systemPrompt },
               {
                 role: "user",
-                content: `用户第 ${note.day} 天的便签：\n「${note.content}」\n\n请用你的流派视角对这段内容给出回应。\n\n用户画像参考：${profileDigest(profile)}`,
+                content: `用户第 ${note.day} 天的便签：\n「${note.content}」\n\n请用你的流派视角对这段内容给出回应。\n安全等级：${analysis.safetyLevel}；意图：${analysis.intents.join("、")}；主题：${analysis.topics.join("、")}。\n\n用户画像参考：${digest}`,
               },
             ],
             { temperature: 0.8, maxTokens: 400 }
           );
-          return { school: persona.id, text, createdAt: new Date().toISOString() };
+          return {
+            school: persona.id,
+            text,
+            createdAt: new Date().toISOString(),
+            agentId: getAgentId(persona.id),
+            skills: ["local-role-fallback"],
+            sources: [],
+            degraded: true,
+          } satisfies SchoolComment;
         } catch (err) {
           console.error(`[agents] comment fallback (${persona.id})`, err);
-          return mockComment(persona, note.content);
         }
-      })
-    );
-    return results;
-  }
-  return SCHOOLS.map((p) => mockComment(p, note.content));
+      }
+      return {
+        ...mockComment(persona, note.content),
+        agentId: getAgentId(persona.id),
+        skills: ["local-template-fallback"],
+        sources: [],
+        degraded: true,
+      } satisfies SchoolComment;
+    })
+  );
+
+  return results.map((result, index) =>
+    result.status === "fulfilled"
+      ? result.value
+      : {
+          ...mockComment(SCHOOLS[index], note.content),
+          agentId: getAgentId(SCHOOLS[index].id),
+          skills: ["local-template-fallback"],
+          sources: [],
+          degraded: true,
+        }
+  );
 }
 
 // ---------------- 深聊 ----------------
+
+export interface AgentTurnResult {
+  content: string;
+  agentId: "A" | "B" | "C" | "D";
+  skills: string[];
+  sources: AgentSource[];
+  degraded: boolean;
+}
 
 export async function chatWithSchool(opts: {
   note: Note;
@@ -100,9 +164,37 @@ export async function chatWithSchool(opts: {
   history: ChatMessage[];
   userMsg: string;
   profile: Profile | null;
-}): Promise<string> {
+}): Promise<AgentTurnResult> {
   const persona = getSchool(opts.school);
   const { note, history, userMsg, profile } = opts;
+  const analysis = analyzeInput({
+    input: userMsg,
+    noteContent: note.content,
+    history,
+    profile,
+    storedRisk: note.risk,
+  });
+
+  try {
+    const external = await callExternalAgent({
+      school: opts.school,
+      analysis,
+      noteContent: note.content,
+      profileDigest: profileDigest(profile),
+      history,
+    });
+    if (external) {
+      return {
+        content: external.response,
+        agentId: external.agentId,
+        skills: external.skills,
+        sources: external.sources,
+        degraded: external.degraded,
+      };
+    }
+  } catch (err) {
+    console.error(`[agents] external ${getAgentId(opts.school)} chat fallback`, err);
+  }
 
   if (isLLMConfigured()) {
     try {
@@ -114,12 +206,25 @@ export async function chatWithSchool(opts: {
         ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
         { role: "user" as const, content: userMsg },
       ];
-      return await chatCompletion(msgs, { temperature: 0.8, maxTokens: 600 });
+      const content = await chatCompletion(msgs, { temperature: 0.8, maxTokens: 600 });
+      return {
+        content,
+        agentId: getAgentId(opts.school),
+        skills: ["local-role-fallback"],
+        sources: [],
+        degraded: true,
+      };
     } catch (err) {
       console.error("[agents] chat fallback", err);
     }
   }
-  return mockChatReply(persona, userMsg, note.content);
+  return {
+    content: mockChatReply(persona, userMsg, note.content),
+    agentId: getAgentId(opts.school),
+    skills: ["local-template-fallback"],
+    sources: [],
+    degraded: true,
+  };
 }
 
 // ---------------- 画像蒸馏 ----------------
