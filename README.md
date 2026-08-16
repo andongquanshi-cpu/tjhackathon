@@ -76,3 +76,9 @@ components/
 - 21 天为结构化日程（day 字段），暂无日历/打卡 UI；可随时补充
 - 画像蒸馏在 LLM 模式下由模型产出 JSON，启发式兜底；极端情况下维度变化以兜底为准
 - 并发调用四流派评论会产生 4 次 LLM 请求，注意 API 用量
+## 开发注意事项
+
+- 不要同时运行 
+ext build 和 
+ext dev：两者共用 .next 目录，build 会破坏正在运行的 dev server（表现为路由 500 / Cannot find module）。需要构建时先停掉 dev server。
+- 日志文件（*.log）已加入 .gitignore，不会提交。

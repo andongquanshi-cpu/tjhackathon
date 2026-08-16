@@ -1,29 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DIM_META } from "@/lib/assessment";
 import type { Profile } from "@/lib/types";
 import RadarChart from "./RadarChart";
 
-export default function ProfileView({ isNew }: { isNew: boolean }) {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      const res = await fetch("/api/profile");
-      const data = await res.json();
-      setProfile(data.profile ?? null);
-      setLoading(false);
-    })();
-  }, []);
-
-  if (loading) {
-    return <main className="mx-auto max-w-3xl px-4 py-16 text-center text-slate-400">加载中…</main>;
-  }
-
-  if (!profile) {
+export default function ProfileView({
+  isNew,
+  initialProfile,
+}: {
+  isNew: boolean;
+  initialProfile: Profile | null;
+}) {
+  if (!initialProfile) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-16 text-center">
         <div className="text-4xl">🌱</div>
@@ -37,6 +26,8 @@ export default function ProfileView({ isNew }: { isNew: boolean }) {
       </main>
     );
   }
+
+  const profile = initialProfile;
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
