@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import AppNav from "@/components/AppNav";
+import XiaoyuAvatar from "@/components/XiaoyuAvatar";
 
 const PHASES = [
   { v: 7, label: "第 7 天 · 觉察" },
@@ -39,53 +41,51 @@ export default function SummaryPage() {
   };
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-8">
-      <div className="mb-6">
-        <Link href="/journal" className="text-sm text-slate-500 hover:text-slate-800">
-          ← 便签本
-        </Link>
-      </div>
+    <main className="summary-page min-h-screen">
+      <AppNav />
+      <section className="summary-layout">
+        <aside>
+          <XiaoyuAvatar variant="host" size="lg" />
+          <span className="eyebrow">PHASE REVIEW</span>
+          <h1>阶段回望</h1>
+          <p>小愈会结合你的画像和这些天的记录，写一份只属于这个阶段的小结。</p>
+          <Link href="/journal">← 返回主界面</Link>
+        </aside>
 
-      <h1 className="text-2xl font-bold text-slate-800">阶段性 AI 总结</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        小愈会结合你的画像和这些天的便签，写一份阶段小结。
-      </p>
+        <article className="summary-paper">
+          <div className="summary-phases">
+            {PHASES.map((item) => (
+              <button
+                key={item.v}
+                onClick={() => {
+                  setPhase(item.v);
+                  setSummary(null);
+                }}
+                className={phase === item.v ? "is-active" : ""}
+              >
+                <span>DAY {item.v}</span>
+                <b>{item.label.split("·")[1]}</b>
+              </button>
+            ))}
+          </div>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        {PHASES.map((p) => (
-          <button
-            key={p.v}
-            onClick={() => {
-              setPhase(p.v);
-              setSummary(null);
-            }}
-            className={`rounded-full px-4 py-2 text-sm transition ${
-              phase === p.v
-                ? "bg-teal-600 font-medium text-white shadow-sm"
-                : "bg-white/80 text-slate-600 ring-1 ring-slate-200 hover:bg-white"
-            }`}
-          >
-            {p.label}
+          <button onClick={generate} disabled={loading} className="primary-pill">
+            {loading ? "小愈正在回顾你的旅程…" : "生成这一阶段的回望 →"}
           </button>
-        ))}
-      </div>
-
-      <button
-        onClick={generate}
-        disabled={loading}
-        className="mt-6 rounded-full bg-teal-600 px-8 py-3 font-medium text-white shadow-md transition hover:bg-teal-500 disabled:opacity-50"
-      >
-        {loading ? "小愈正在回顾你的旅程…" : "生成总结 ✨"}
-      </button>
-
-      {error && <p className="mt-4 text-sm text-rose-500">{error}</p>}
-
-      {summary && (
-        <div className="fade-up note-paper mt-8 p-6 pt-9">
-          <p className="whitespace-pre-wrap text-[15px] leading-7 text-slate-700">{summary}</p>
-          <p className="mt-5 text-right text-sm text-teal-600">—— 小愈 🌱</p>
-        </div>
-      )}
+          {error && <p className="summary-error">{error}</p>}
+          {summary ? (
+            <div className="summary-result fade-up">
+              <p>{summary}</p>
+              <span>—— 小愈</span>
+            </div>
+          ) : (
+            <div className="summary-empty">
+              <span>选择一个阶段</span>
+              <p>让散落在记录、圆桌与画像中的变化，聚成一封回信。</p>
+            </div>
+          )}
+        </article>
+      </section>
     </main>
   );
 }

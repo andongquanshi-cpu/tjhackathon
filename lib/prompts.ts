@@ -23,7 +23,82 @@ export const DAY_PROMPTS: string[] = [
   "给 21 天后的自己留一句话。",
 ];
 
+export interface DailyGuide {
+  day: number;
+  theme: string;
+  subtitle: string;
+  tasks: {
+    id: string;
+    part: string;
+    title: string;
+    description: string;
+    duration: string;
+  }[];
+}
+
+const THEMES = [
+  ["抵达此刻", "先注意，再开始"],
+  ["看见分心", "不责备走神的自己"],
+  ["命名天气", "为情绪留一个位置"],
+  ["放慢动作", "从自动驾驶中醒来"],
+  ["念头不是事实", "把想法放在手心里看"],
+  ["听见关系", "留意一句话如何进入心里"],
+  ["一呼一吸", "回到身体最简单的锚点"],
+  ["对自己温柔", "换一种说话的方式"],
+  ["收集微小做到", "让力量有迹可循"],
+  ["靠近回避", "只看一眼，不必解决"],
+  ["保存温暖", "让好事多停留十秒"],
+  ["身体地图", "紧绷也在传递消息"],
+  ["压力的形状", "把无形变得可观察"],
+  ["练习感谢", "注意已经拥有的支持"],
+  ["松开应该", "分辨规则与真实需要"],
+  ["被理解的愿望", "说出最想被听见的部分"],
+  ["发现他人", "连接从注意开始"],
+  ["最小的一步", "行动不必一次完成"],
+  ["听身体说", "恢复也是训练的一部分"],
+  ["回望变化", "看见过程，而非成绩"],
+  ["写给未来", "把此刻交给之后的自己"],
+] as const;
+
+export const DAILY_GUIDES: DailyGuide[] = DAY_PROMPTS.map((prompt, index) => {
+  const day = index + 1;
+  const [theme, subtitle] = THEMES[index];
+  return {
+    day,
+    theme,
+    subtitle,
+    tasks: [
+      {
+        id: `day-${day}-record`,
+        part: "PART 1",
+        title: "记录与标记",
+        description: prompt,
+        duration: "约 3 分钟",
+      },
+      {
+        id: `day-${day}-practice`,
+        part: "PART 2",
+        title: "今日微练习",
+        description: `带着「${theme}」过今天：选择一个普通时刻，停下来观察十秒，不评价，也不急着改变。`,
+        duration: "约 2 分钟",
+      },
+      {
+        id: `day-${day}-body`,
+        part: "PART 3",
+        title: "身体觉察",
+        description: "从额头到脚底缓慢扫描一次身体，找到最明显的感受，为它留出三次呼吸。",
+        duration: "约 2 分钟",
+      },
+    ],
+  };
+});
+
 export function dayPrompt(day: number): string {
   const idx = Math.max(0, Math.min(DAY_PROMPTS.length - 1, day - 1));
   return DAY_PROMPTS[idx];
+}
+
+export function dailyGuide(day: number): DailyGuide {
+  const index = Math.max(0, Math.min(DAILY_GUIDES.length - 1, day - 1));
+  return DAILY_GUIDES[index];
 }

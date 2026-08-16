@@ -26,6 +26,34 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+export type RiskLevel = "gentle" | "concern" | "crisis";
+
+export interface RiskSignal {
+  level: RiskLevel;
+  title: string;
+  message: string;
+  resources?: string[];
+}
+
+export interface SessionFeedback {
+  summary: string;
+  highlights: string[];
+  suggestedAction: string;
+  createdAt: string;
+}
+
+export interface DailyGuideProgress {
+  day: number;
+  completedTaskIds: string[];
+  completedAt?: string;
+  updatedAt: string;
+}
+
+export interface LocalUser {
+  displayName: string;
+  createdAt: string;
+}
+
 export interface Note {
   id: string;
   /** 第几天（1-21） */
@@ -40,6 +68,12 @@ export interface Note {
   comments: SchoolComment[] | null;
   /** 每个流派的深聊记录 */
   conversations: Partial<Record<SchoolId, ChatMessage[]>>;
+  /** 用户在圆桌中选择继续深聊的导师 */
+  selectedSchool?: SchoolId;
+  /** 本次记录命中的安全提示 */
+  risk?: RiskSignal | null;
+  /** 圆桌和深聊结束后的结构化反馈 */
+  feedback?: SessionFeedback | null;
 }
 
 export interface Profile {
@@ -54,7 +88,8 @@ export interface Profile {
 }
 
 export interface DB {
-  version: 1;
+  version: 1 | 2 | 3;
   profile: Profile | null;
   notes: Note[];
+  guideProgress: DailyGuideProgress[];
 }

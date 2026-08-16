@@ -3,28 +3,41 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { QUESTIONS, DIM_META } from "@/lib/assessment";
+import XiaoyuAvatar from "@/components/XiaoyuAvatar";
 
 const SCALE = [
-  { v: 1, label: "非常不符合" },
-  { v: 2, label: "不太符合" },
-  { v: 3, label: "一般" },
-  { v: 4, label: "比较符合" },
-  { v: 5, label: "非常符合" },
+  { v: 1, label: "完全不像我" },
+  { v: 2, label: "不太像我" },
+  { v: 3, label: "有时如此" },
+  { v: 4, label: "比较像我" },
+  { v: 5, label: "非常像我" },
 ];
 
 export default function AssessmentPage() {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const question = QUESTIONS[step];
+  const done = step === QUESTIONS.length - 1;
 
-  const answered = Object.keys(answers).length;
-  const done = answered === QUESTIONS.length;
-
-  const setAnswer = (qid: string, v: number) =>
+  const setAnswer = (qid: string, v: number) => {
     setAnswers((a) => ({ ...a, [qid]: v }));
+    setError("");
+  };
 
   const submit = async () => {
+    if (!answers[question.id]) {
+      setError("先选择一个最接近你的答案");
+      return;
+    }
+    if (!done) {
+      setStep((value) => value + 1);
+      return;
+    }
     setSubmitting(true);
+    setError("");
     try {
       const res = await fetch("/api/assessment", {
         method: "POST",
@@ -32,72 +45,73 @@ export default function AssessmentPage() {
         body: JSON.stringify({ answers }),
       });
       if (res.ok) {
-        router.push("/profile?new=1");
+        router.push("/journal?welcome=1");
+      } else {
+        setError("暂时无法保存，请稍后再试");
       }
+    } catch {
+      setError("网络似乎走神了，请重试");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10">
-      <div className="mb-2 text-center text-4xl">🌱</div>
-      <h1 className="text-center text-2xl font-bold text-slate-800">初始测评</h1>
-      <p className="mt-2 text-center text-sm text-slate-500">
-        回答 10 道小题，小愈会帮你画出 5 个维度的伊始画像。没有对错，凭直觉就好。
-      </p>
-
-      <div className="mx-auto mt-6 h-2 w-full max-w-md overflow-hidden rounded-full bg-slate-200">
-        <div
-          className="h-full rounded-full bg-teal-500 transition-all"
-          style={{ width: `${(answered / QUESTIONS.length) * 100}%` }}
-        />
-      </div>
-
-      <div className="mt-8 space-y-5">
-        {QUESTIONS.map((q, qi) => (
-          <div key={q.id} className="rounded-3xl bg-white/85 p-5 shadow-sm ring-1 ring-slate-100">
-            <div className="mb-3 flex items-start gap-2">
-              <span
-                className="mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-white"
-                style={{ background: DIM_META.find((d) => d.key === q.dim)?.color }}
-              >
-                {DIM_META.find((d) => d.key === q.dim)?.label}
-              </span>
-              <span className="text-sm leading-6 text-slate-700">
-                {qi + 1}. {q.text}
-              </span>
-            </div>
-            <div className="flex gap-1.5">
-              {SCALE.map((s) => (
-                <button
-                  key={s.v}
-                  onClick={() => setAnswer(q.id, s.v)}
-                  className={`flex-1 rounded-xl py-2 text-xs transition ${
-                    answers[q.id] === s.v
-                      ? "bg-teal-600 font-medium text-white shadow-sm"
-                      : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                  }`}
-                  title={s.label}
-                >
-                  {s.v}
-                  <span className="mt-0.5 block text-[10px] opacity-70">{s.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-8 flex justify-center">
+    <main className="assessment-shell min-h-screen px-5 py-8">
+      <header className="mx-auto flex max-w-5xl items-center justify-between">
         <button
-          onClick={submit}
-          disabled={!done || submitting}
-          className="rounded-full bg-teal-600 px-10 py-3 font-medium text-white shadow-md transition hover:bg-teal-500 disabled:opacity-40"
+          onClick={() => (step === 0 ? router.push("/") : setStep((value) => value - 1))}
+          className="line-button"
         >
-          {submitting ? "生成中…" : done ? "完成测评，建立画像 →" : `还剩 ${QUESTIONS.length - answered} 题`}
+          ← {step === 0 ? "暂时不测试" : "上一题"}
         </button>
-      </div>
+        <span className="font-serif text-sm tracking-[0.24em] text-stone-500">
+          进度条 {step + 1}/{QUESTIONS.length}
+        </span>
+      </header>
+
+      <section className="mx-auto mt-14 max-w-4xl">
+        <div className="mb-5 h-px bg-stone-300">
+          <div
+            className="h-1 -translate-y-1/2 bg-stone-800 transition-all duration-500"
+            style={{ width: `${((step + 1) / QUESTIONS.length) * 100}%` }}
+          />
+        </div>
+        <div className="question-card">
+          <span className="eyebrow">
+            {DIM_META.find((item) => item.key === question.dim)?.label}
+          </span>
+          <h1 className="mt-5 max-w-2xl font-serif text-3xl leading-relaxed text-stone-900 sm:text-4xl">
+            {question.text}
+          </h1>
+          <p className="mt-4 text-sm text-stone-500">不必思考太久，选择第一直觉就好。</p>
+
+          <div className="mt-10 grid gap-3 sm:grid-cols-5">
+            {SCALE.map((item) => (
+              <button
+                key={item.v}
+                onClick={() => setAnswer(question.id, item.v)}
+                className={`answer-option ${answers[question.id] === item.v ? "is-active" : ""}`}
+              >
+                <span className="text-xl font-semibold">{item.v}</span>
+                <span className="text-xs">{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-8 flex items-center gap-5">
+          <XiaoyuAvatar variant="host" size="sm" />
+          <div className="speech-line">我会记住你的选择，但不会给你贴标签。</div>
+        </div>
+
+        <div className="mt-10 flex items-center justify-end gap-4">
+          {error && <p className="text-sm text-rose-700">{error}</p>}
+          <button onClick={submit} disabled={submitting} className="primary-pill">
+            {submitting ? "正在整理…" : done ? "完成，去见小愈 →" : "下一题 →"}
+          </button>
+        </div>
+      </section>
     </main>
   );
 }

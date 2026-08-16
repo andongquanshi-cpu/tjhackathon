@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { SCHOOLS, getSchool } from "@/lib/personas";
+import { useRouter } from "next/navigation";
+import { getSchool } from "@/lib/personas";
 import type { Note, Profile, SchoolId } from "@/lib/types";
-import SchoolAvatar from "./SchoolAvatar";
+import XiaoyuAvatar from "./XiaoyuAvatar";
 
-const MOOD: Record<number, string> = { 1: "😞", 2: "😔", 3: "😐", 4: "🙂", 5: "😊" };
+const MOOD: Record<number, string> = { 1: "阴", 2: "倦", 3: "平", 4: "暖", 5: "晴" };
 
 export default function NoteView({
   initialNote,
@@ -15,31 +16,34 @@ export default function NoteView({
   initialNote: Note;
   initialProfile: Profile | null;
 }) {
+  const router = useRouter();
   const [note, setNote] = useState(initialNote);
-  const [profile, setProfile] = useState(initialProfile);
+  const [, setProfile] = useState(initialProfile);
   const [commentsLoading, setCommentsLoading] = useState(false);
-  const [chatSchool, setChatSchool] = useState<SchoolId | null>(null);
+  const [chatSchool, setChatSchool] = useState<SchoolId | null>(initialNote.selectedSchool ?? null);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
-  const flash = (msg: string) => {
-    setNotice(msg);
-    setTimeout(() => setNotice(null), 3000);
+  const flash = (message: string) => {
+    setNotice(message);
+    window.setTimeout(() => setNotice(null), 3000);
   };
 
   const generateComments = async () => {
     setCommentsLoading(true);
     try {
-      const res = await fetch(`/api/notes/${note.id}/comments`, { method: "POST" });
-      const data = await res.json();
+      const response = await fetch(`/api/notes/${note.id}/comments`, { method: "POST" });
+      const data = await response.json();
       if (data.comments) {
-        setNote((n) => ({ ...n, comments: data.comments }));
-        flash("四个流派已经读完你的便签 ✨");
+        setNote((current) => ({ ...current, comments: data.comments }));
+        flash("四位导师已经入席");
+      } else {
+        flash(data.error ?? "邀请失败，请重试");
       }
-    } catch (err) {
-      console.error(err);
-      flash("生成失败，请重试");
+    } catch {
+      flash("邀请失败，请重试");
     } finally {
       setCommentsLoading(false);
     }
@@ -47,204 +51,196 @@ export default function NoteView({
 
   const sendChat = async () => {
     if (!chatSchool || !input.trim() || sending) return;
+    const school = chatSchool;
     const text = input.trim();
     setInput("");
     setSending(true);
-
-    const optimistic: Note = {
-      ...note,
-      conversations: {
-        ...note.conversations,
-        [chatSchool]: [
-          ...(note.conversations[chatSchool] ?? []),
-          { role: "user", school: chatSchool, content: text, createdAt: new Date().toISOString() },
-        ],
-      },
+    const userMessage = {
+      role: "user" as const,
+      school,
+      content: text,
+      createdAt: new Date().toISOString(),
     };
-    setNote(optimistic);
+    setNote((current) => ({
+      ...current,
+      selectedSchool: school,
+      conversations: {
+        ...current.conversations,
+        [school]: [...(current.conversations[school] ?? []), userMessage],
+      },
+    }));
 
     try {
-      const res = await fetch(`/api/notes/${note.id}/chat`, {
+      const response = await fetch(`/api/notes/${note.id}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ school: chatSchool, message: text }),
+        body: JSON.stringify({ school, message: text }),
       });
-      const data = await res.json();
-      if (data.reply) {
-        setNote((n) => ({
-          ...n,
-          conversations: {
-            ...n.conversations,
-            [chatSchool]: [...(n.conversations[chatSchool] ?? []), data.reply],
-          },
-        }));
+      const data = await response.json();
+      if (!response.ok || !data.reply) {
+        flash(data.error ?? "发送失败，请重试");
+        return;
       }
+      setNote((current) => ({
+        ...current,
+        conversations: {
+          ...current.conversations,
+          [school]: [...(current.conversations[school] ?? []), data.reply],
+        },
+      }));
       if (data.profile) {
         setProfile(data.profile);
-        flash("这次的对话已沉淀进你的画像 🌱");
+        flash("这段对话已沉淀进你的画像");
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       flash("发送失败，请重试");
     } finally {
       setSending(false);
     }
   };
 
+  const finishSession = async () => {
+    if (note.feedback) {
+      router.push(`/notes/${note.id}/feedback`);
+      return;
+    }
+    setFeedbackLoading(true);
+    try {
+      const response = await fetch(`/api/notes/${note.id}/feedback`, { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) {
+        flash(data.error ?? "反馈生成失败，请重试");
+        return;
+      }
+      router.push(`/notes/${note.id}/feedback`);
+    } catch {
+      flash("反馈生成失败，请重试");
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
+
   const chatMessages = chatSchool ? note.conversations[chatSchool] ?? [] : [];
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      {/* 顶栏 */}
-      <div className="mb-6 flex items-center justify-between text-sm">
-        <Link href="/journal" className="text-slate-500 hover:text-slate-800">
-          ← 返回便签本
-        </Link>
-        <Link href="/profile" className="rounded-full bg-white/70 px-4 py-1.5 text-slate-600 shadow-sm hover:bg-white">
-          🌱 我的画像
-        </Link>
-      </div>
+    <main className="roundtable-page min-h-screen">
+      <header className="roundtable-nav">
+        <Link href="/journal">← 返回主界面</Link>
+        <span>DAY {note.day} · 圆桌会议</span>
+        <Link href="/profile">我的画像</Link>
+      </header>
 
-      {notice && (
-        <div className="fade-up mb-4 rounded-2xl bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700 ring-1 ring-emerald-200">
-          {notice}
-        </div>
-      )}
-
-      {/* 便签 */}
-      <div className="note-paper mx-auto max-w-xl p-6 pt-8 fade-up">
-        <div className="mb-2 flex items-center justify-between text-xs text-amber-700/70">
-          <span>Day {note.day} · {note.prompt}</span>
-          <span className="text-lg">{MOOD[note.mood] ?? "😐"}</span>
-        </div>
-        <p className="whitespace-pre-wrap text-[15px] leading-7 text-slate-700">{note.content}</p>
-        <p className="mt-4 text-right text-[11px] text-slate-400">
-          {new Date(note.createdAt).toLocaleString("zh-CN", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}
-        </p>
-      </div>
-
-      {/* 四流派评论 */}
-      <section className="mt-10">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-700">四个流派 · 读你的便签</h2>
-          {!note.comments && (
-            <button
-              onClick={generateComments}
-              disabled={commentsLoading}
-              className="rounded-full bg-teal-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-teal-500 disabled:opacity-60"
-            >
-              {commentsLoading ? "正在阅读…" : "让小愈们读一读 ✨"}
-            </button>
-          )}
-        </div>
-
-        {!note.comments && !commentsLoading && (
-          <p className="rounded-2xl bg-white/60 p-4 text-sm text-slate-500">
-            小愈的四个伙伴还没有读过这张便签。点击上方按钮，让
-            {SCHOOLS.map((s) => `${s.name}（${s.school}）`).join("、")}分别给你回应。
-          </p>
-        )}
-
-        {note.comments && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {note.comments.map((c) => {
-              const persona = getSchool(c.school);
-              const active = chatSchool === c.school;
-              return (
-                <div
-                  key={c.school}
-                  className={`fade-up rounded-3xl border bg-white/80 p-5 shadow-sm transition ${
-                    active ? "border-teal-300 ring-2 ring-teal-100" : "border-slate-100"
-                  }`}
-                >
-                  <div className="mb-3 flex items-center gap-3">
-                    <SchoolAvatar persona={persona} />
-                    <div>
-                      <div className="font-semibold text-slate-700">{persona.name}</div>
-                      <div className="text-xs text-slate-400">{persona.school} · {persona.tagline}</div>
-                    </div>
-                  </div>
-                  <p className="text-sm leading-6 text-slate-600">{c.text}</p>
-                  <button
-                    onClick={() => setChatSchool(active ? null : c.school)}
-                    className="mt-4 rounded-full border border-teal-200 px-3 py-1.5 text-xs font-medium text-teal-700 transition hover:bg-teal-50"
-                  >
-                    {active ? "收起对话" : "和 TA 继续聊 →"}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* 深聊面板 */}
-      {chatSchool && (
-        <section className="fade-up mt-8 rounded-3xl border border-slate-100 bg-white/85 p-5 shadow-sm">
-          <div className="mb-4 flex items-center gap-3">
-            <SchoolAvatar persona={getSchool(chatSchool)} />
-            <div>
-              <div className="font-semibold text-slate-700">{getSchool(chatSchool).name}</div>
-              <div className="text-xs text-slate-400">围绕这张便签，和 TA 多聊几轮</div>
-            </div>
-          </div>
-
-          <div className="max-h-96 space-y-3 overflow-y-auto pr-1">
-            {chatMessages.length === 0 && (
-              <p className="rounded-2xl bg-slate-50 p-4 text-center text-sm text-slate-400">
-                从你感兴趣的地方开始吧～
-              </p>
-            )}
-            {chatMessages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                {m.role === "assistant" && (
-                  <div className="mr-2 self-end">
-                    <SchoolAvatar persona={getSchool(m.school)} size="sm" />
-                  </div>
-                )}
-                <div
-                  className={`max-w-[78%] whitespace-pre-wrap px-4 py-2.5 text-sm leading-6 ${
-                    m.role === "user"
-                      ? "bubble-user bg-teal-600 text-white"
-                      : "bubble-ai bg-slate-100 text-slate-700"
-                  }`}
-                >
-                  {m.content}
-                </div>
-              </div>
-            ))}
-            {sending && (
-              <div className="flex justify-start">
-                <div className="mr-2 self-end">
-                  <SchoolAvatar persona={getSchool(chatSchool)} size="sm" />
-                </div>
-                <div className="bubble-ai flex items-center gap-1 bg-slate-100 px-4 py-3">
-                  <span className="typing-dot h-2 w-2 rounded-full bg-slate-400" />
-                  <span className="typing-dot h-2 w-2 rounded-full bg-slate-400" />
-                  <span className="typing-dot h-2 w-2 rounded-full bg-slate-400" />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="mt-4 flex gap-2">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && sendChat()}
-              placeholder={`和 ${getSchool(chatSchool).name} 说点什么…`}
-              className="flex-1 rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none transition focus:border-teal-400"
-            />
-            <button
-              onClick={sendChat}
-              disabled={sending || !input.trim()}
-              className="rounded-full bg-teal-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-teal-500 disabled:opacity-50"
-            >
-              发送
-            </button>
-          </div>
+      {notice && <div className="roundtable-notice">{notice}</div>}
+      {note.risk && (
+        <section className={`session-risk alert-${note.risk.level}`}>
+          <strong>{note.risk.title}</strong>
+          <p>{note.risk.message}</p>
+          {note.risk.resources?.map((resource) => <span key={resource}>{resource}</span>)}
         </section>
       )}
-    </div>
+
+      <section className="roundtable-intro">
+        <div className="host-seat">
+          <XiaoyuAvatar variant="host" size="md" />
+          <div>
+            <span className="eyebrow">主持人 · 小愈</span>
+            <p>“谢谢你把这一刻带到桌上。我们不急着解决，先从不同方向看看它。”</p>
+          </div>
+        </div>
+        <div className="source-note">
+          <span>{MOOD[note.mood] ?? "平"} · {note.prompt}</span>
+          <p>{note.content}</p>
+        </div>
+      </section>
+
+      {!note.comments ? (
+        <section className="roundtable-start">
+          <div className="empty-table"><span>圆桌正在等待入席</span></div>
+          <h1>{commentsLoading ? "四位导师正在阅读你的记录……" : "准备好听见不同的声音了吗？"}</h1>
+          <button onClick={generateComments} disabled={commentsLoading} className="primary-pill">
+            {commentsLoading ? "正在邀请导师" : "邀请四位导师入席 →"}
+          </button>
+        </section>
+      ) : (
+        <>
+          <section className="roundtable-scene">
+            <div className="table-center">
+              <span>ROUND TABLE</span>
+              <p>点击最触动你的角色<br />进入一对一深聊</p>
+            </div>
+            <div className="reader-seat">
+              <XiaoyuAvatar variant="reader" size="md" />
+              <span>此刻的你</span>
+            </div>
+            {note.comments.map((comment, index) => {
+              const persona = getSchool(comment.school);
+              return (
+                <button
+                  key={comment.school}
+                  onClick={() => setChatSchool(comment.school)}
+                  className={`mentor-seat seat-${index + 1} ${chatSchool === comment.school ? "is-selected" : ""}`}
+                >
+                  <span className="seat-arrow">↓ 选择我</span>
+                  <XiaoyuAvatar variant={comment.school} size="md" />
+                  <div className="seat-bubble">
+                    <strong>{persona.name} · {persona.school}</strong>
+                    <p>{comment.text}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </section>
+
+          {chatSchool && (
+            <section className="dialog-panel fade-up">
+              <header>
+                <div>
+                  <span className="eyebrow">ONE TO ONE</span>
+                  <h2>和 {getSchool(chatSchool).name} 继续聊</h2>
+                </div>
+                <button onClick={() => setChatSchool(null)}>返回圆桌 ×</button>
+              </header>
+
+              <div className="dialog-messages">
+                {chatMessages.length === 0 && (
+                  <div className="dialog-empty">
+                    <XiaoyuAvatar variant={chatSchool} size="sm" />
+                    <p>“从刚才最触动你的那一句开始就好。”</p>
+                  </div>
+                )}
+                {chatMessages.map((message, index) => (
+                  <div key={`${message.createdAt}-${index}`} className={`dialog-row ${message.role}`}>
+                    {message.role === "assistant" && <XiaoyuAvatar variant={message.school} size="sm" />}
+                    <p>{message.content}</p>
+                  </div>
+                ))}
+                {sending && <div className="typing-line">正在认真想一想……</div>}
+              </div>
+
+              <div className="dialog-input">
+                <input
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={(event) => event.key === "Enter" && sendChat()}
+                  placeholder={`和 ${getSchool(chatSchool).name} 说点什么……`}
+                />
+                <button onClick={sendChat} disabled={sending || !input.trim()}>发送 ↑</button>
+              </div>
+            </section>
+          )}
+
+          <div className="session-finish">
+            <p>
+              {chatMessages.length
+                ? "聊到这里也可以。小愈会替你整理今天值得带走的部分。"
+                : "你可以先选择一位导师深聊，也可以直接收下四种视角。"}
+            </p>
+            <button onClick={finishSession} disabled={feedbackLoading} className="primary-pill">
+              {feedbackLoading ? "小愈正在整理…" : note.feedback ? "查看本轮反馈 →" : "结束圆桌，生成反馈 →"}
+            </button>
+          </div>
+        </>
+      )}
+    </main>
   );
 }

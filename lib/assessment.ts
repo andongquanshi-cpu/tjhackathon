@@ -17,16 +17,9 @@ export const DIM_META: { key: DimKey; label: string; color: string; hint: string
 ];
 
 export const QUESTIONS: Question[] = [
-  { id: "q1", dim: "emotion", text: "最近一周，我很容易被小事影响情绪。", reverse: true },
-  { id: "q2", dim: "emotion", text: "大多数时候，我能感到内心平静。" },
-  { id: "q3", dim: "stress", text: "我经常觉得任务多到喘不过气。", reverse: true },
-  { id: "q4", dim: "stress", text: "即使很忙，我也能找到让自己放松的方式。" },
-  { id: "q5", dim: "selfCare", text: "当我犯错时，我会严厉地批评自己。", reverse: true },
-  { id: "q6", dim: "selfCare", text: "我能在累的时候允许自己休息。" },
-  { id: "q7", dim: "connection", text: "遇到困难时，我觉得身边有人可以依靠。" },
-  { id: "q8", dim: "connection", text: "我常常感到孤独，即使周围有人。", reverse: true },
-  { id: "q9", dim: "mindfulness", text: "我经常「机械地」做事，没注意到当下。", reverse: true },
-  { id: "q10", dim: "mindfulness", text: "我能留意到自己的情绪和身体感受。" },
+  { id: "q1", dim: "emotion", text: "最近一周，我能觉察到情绪正在发生变化，而不是立刻被它带走。" },
+  { id: "q2", dim: "stress", text: "事情很多的时候，我仍能找到一点让自己喘息的空间。" },
+  { id: "q3", dim: "selfCare", text: "当我没有做好一件事时，我愿意像对待朋友一样对待自己。" },
 ];
 
 /** 5 点计分（1=非常不符合 ~ 5=非常符合），映射到 0-100 */

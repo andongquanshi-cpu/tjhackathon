@@ -4,6 +4,7 @@ import Link from "next/link";
 import { DIM_META } from "@/lib/assessment";
 import type { Profile } from "@/lib/types";
 import RadarChart from "./RadarChart";
+import XiaoyuAvatar from "./XiaoyuAvatar";
 
 export default function ProfileView({
   isNew,
@@ -15,7 +16,7 @@ export default function ProfileView({
   if (!initialProfile) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <div className="text-4xl">🌱</div>
+        <div className="flex justify-center"><XiaoyuAvatar variant="host" size="md" /></div>
         <p className="mt-4 text-slate-500">还没有画像，先完成初始测评吧。</p>
         <Link
           href="/assessment"
@@ -30,29 +31,21 @@ export default function ProfileView({
   const profile = initialProfile;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <Link href="/journal" className="text-sm text-slate-500 hover:text-slate-800">
-          ← 便签本
-        </Link>
-        <div className="flex gap-2">
-          <Link href="/summary" className="rounded-full bg-white/70 px-4 py-1.5 text-sm text-slate-600 shadow-sm hover:bg-white">
-            阶段总结
-          </Link>
-          <Link href="/assessment" className="rounded-full bg-teal-600 px-4 py-1.5 text-sm text-white shadow-sm hover:bg-teal-500">
-            重新测评
-          </Link>
+    <main className="profile-page mx-auto max-w-4xl px-4 py-12">
+      <div className="mb-8 flex items-end justify-between">
+        <div>
+          <span className="eyebrow">INNER PORTRAIT</span>
+          <h1 className="mt-2 font-serif text-4xl text-stone-900">我的心理画像</h1>
+          <p className="mt-2 text-sm text-stone-500">它不是结论，而是一张会随着每次对话生长的地图。</p>
         </div>
+        <Link href="/assessment" className="line-button">重新测评</Link>
       </div>
 
       {isNew && (
         <div className="fade-up mb-6 rounded-2xl bg-teal-50 px-5 py-4 text-sm text-teal-800 ring-1 ring-teal-200">
-          🌱 伊始画像已建立。从今天开始，每次深聊都会被沉淀进这张画像里。
+          伊始画像已建立。从今天开始，每次深聊都会被沉淀进这张画像里。
         </div>
       )}
-
-      <h1 className="text-2xl font-bold text-slate-800">我的心理画像</h1>
-      <p className="mt-1 text-sm text-slate-500">维度分数 0-100，来自测评与每一次对话的沉淀。</p>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="rounded-3xl bg-white/85 p-6 shadow-sm ring-1 ring-slate-100">

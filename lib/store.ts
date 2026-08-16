@@ -1,13 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { buildSeedData } from "./seed";
-import type { DB, Note, Profile } from "./types";
+import type { DB, DailyGuideProgress, Note, Profile } from "./types";
 
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), ".data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 
 function emptyDB(): DB {
-  return { version: 1, profile: null, notes: [] };
+  return { version: 3, profile: null, notes: [], guideProgress: [] };
 }
 
 /** 演示模式下首次运行自动写入种子数据，开箱即有内容 */
@@ -18,7 +18,7 @@ function ensureSeeded(): void {
     return;
   }
   const { notes, profile } = buildSeedData();
-  writeDB({ version: 1, profile, notes });
+  writeDB({ version: 3, profile, notes, guideProgress: [] });
 }
 
 function readDB(): DB {
@@ -26,7 +26,17 @@ function readDB(): DB {
   try {
     const raw = fs.readFileSync(DB_FILE, "utf-8");
     const db = JSON.parse(raw) as Partial<DB>;
-    return { ...emptyDB(), ...db };
+    return {
+      ...emptyDB(),
+      ...db,
+      version: 3,
+      notes: (db.notes ?? []).map((note) => ({
+        ...note,
+        risk: note.risk ?? null,
+        feedback: note.feedback ?? null,
+      })),
+      guideProgress: db.guideProgress ?? [],
+    };
   } catch (err) {
     console.error("[store] failed to read db, using empty", err);
     return emptyDB();
@@ -82,13 +92,37 @@ export function updateNote(id: string, patch: Partial<Note>): Note | null {
   return db.notes[idx];
 }
 
+// ---- Daily guide ----
+export function getGuideProgress(): DailyGuideProgress[] {
+  return readDB().guideProgress;
+}
+
+export function getDayProgress(day: number): DailyGuideProgress | null {
+  return readDB().guideProgress.find((item) => item.day === day) ?? null;
+}
+
+export function setDayProgress(day: number, completedTaskIds: string[]): DailyGuideProgress {
+  const db = readDB();
+  const index = db.guideProgress.findIndex((item) => item.day === day);
+  const progress: DailyGuideProgress = {
+    day,
+    completedTaskIds: [...new Set(completedTaskIds)],
+    updatedAt: new Date().toISOString(),
+  };
+  if (progress.completedTaskIds.length >= 3) progress.completedAt = progress.updatedAt;
+  if (index >= 0) db.guideProgress[index] = progress;
+  else db.guideProgress.push(progress);
+  writeDB(db);
+  return progress;
+}
+
 // ---- Reset / seed ----
 export function resetDB(): void {
   writeDB(emptyDB());
 }
 
 export function seedDB(notes: Note[], profile: Profile | null): void {
-  writeDB({ version: 1, profile, notes });
+  writeDB({ version: 3, profile, notes, guideProgress: [] });
 }
 
 /** 当前训练营第几天（1-21），以初始测评为起点 */

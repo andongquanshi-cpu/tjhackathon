@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { dayPrompt } from "@/lib/prompts";
+import { evaluateRisk } from "@/lib/risk";
 import { addNote, currentDay, getNotes, getProfile } from "@/lib/store";
 import type { Note } from "@/lib/types";
 
@@ -27,6 +28,8 @@ export async function POST(req: Request) {
     createdAt: new Date().toISOString(),
     comments: null,
     conversations: {},
+    risk: evaluateRisk(content, profile),
+    feedback: null,
   };
   addNote(note);
   return NextResponse.json({ note });

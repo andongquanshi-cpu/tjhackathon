@@ -41,7 +41,10 @@ export async function POST(
   };
 
   const messages = [...history, userMsg, replyMsg];
-  updateNote(id, { conversations: { ...note.conversations, [school]: messages } });
+  updateNote(id, {
+    selectedSchool: school,
+    conversations: { ...note.conversations, [school]: messages },
+  });
 
   // 画像蒸馏：把对话沉淀进用户画像
   const profile = getProfile();
