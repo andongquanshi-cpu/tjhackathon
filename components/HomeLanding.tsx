@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import type { SchoolPersona } from "@/lib/personas";
+import { MENTOR_DISPLAY } from "@/lib/mentors";
 import XiaoyuAvatar from "@/components/XiaoyuAvatar";
+import MentorPortrait from "@/components/MentorPortrait";
 import AuthControl from "@/components/AuthControl";
 
 type Props = {
@@ -14,38 +16,11 @@ type Props = {
   notesCount: number;
 };
 
-const HOME_MENTORS = {
-  psychodynamic: {
-    name: "西格蒙德·弗洛伊德",
-    school: "精神分析",
-    description: "强调童年性本能与无意识冲突，人格由本我、自我、超我构成。",
-    feature: "freud",
-  },
-  humanistic: {
-    name: "卡尔·罗杰斯",
-    school: "人本主义",
-    description: "坚信人的“自我实现”倾向，主张以无条件的积极关注和共情来促进来访者成长。",
-    feature: "rogers",
-  },
-  cognitive: {
-    name: "阿尔伯特·班杜拉",
-    school: "社会认知理论",
-    description: "在行为主义基础上加入认知因素，提出“观察学习”和“自我效能感”，强调人与环境的交互作用。",
-    feature: "bandura",
-  },
-  postmodern: {
-    name: "B.F. 斯金纳",
-    school: "行为主义",
-    description: "只研究可观察行为，认为一切心理都是环境刺激与操作性条件反射的产物。",
-    feature: "skinner",
-  },
-} satisfies Record<SchoolPersona["id"], { name: string; school: string; description: string; feature: string }>;
-
 export default function HomeLanding({ mentors, hasProfile, day, notesCount }: Props) {
   const [selectedId, setSelectedId] = useState(mentors[0].id);
   const selected = mentors.find((mentor) => mentor.id === selectedId) ?? mentors[0];
-  const selectedInfo = HOME_MENTORS[selected.id];
-  const planHref = hasProfile ? "/guide" : "/assessment";
+  const selectedInfo = MENTOR_DISPLAY[selected.id];
+  const planHref = hasProfile ? "/journal" : "/assessment";
   const roundtableHref = hasProfile ? "/journal" : "/assessment";
 
   return (
@@ -76,7 +51,7 @@ export default function HomeLanding({ mentors, hasProfile, day, notesCount }: Pr
           <div className="warm-home__mentor-row" role="tablist" aria-label="选择一位心灵导师">
             {mentors.map((mentor, index) => {
               const isSelected = mentor.id === selectedId;
-              const info = HOME_MENTORS[mentor.id];
+              const info = MENTOR_DISPLAY[mentor.id];
               return (
                 <button
                   key={mentor.id}
@@ -88,19 +63,7 @@ export default function HomeLanding({ mentors, hasProfile, day, notesCount }: Pr
                   aria-controls="mentor-intro"
                 >
                   <span className="warm-home__number">0{index + 1}</span>
-                  <span className={`warm-home__portrait warm-home__portrait--${info.feature}`}>
-                    <span className="warm-home__face" aria-hidden="true">
-                      <span className="warm-home__hair" />
-                      <span className="warm-home__eye warm-home__eye--left" />
-                      <span className="warm-home__eye warm-home__eye--right" />
-                      <span className="warm-home__glasses" />
-                      <span className="warm-home__nose" />
-                      <span className="warm-home__mouth" />
-                      <span className="warm-home__beard" />
-                      <span className="warm-home__chin" />
-                    </span>
-                    <i>{mentor.name.replace("小愈·", "")}</i>
-                  </span>
+                  <MentorPortrait feature={info.feature} />
                   <strong>{info.name}</strong>
                   <small>{info.school}</small>
                 </button>
@@ -114,7 +77,7 @@ export default function HomeLanding({ mentors, hasProfile, day, notesCount }: Pr
             style={{ "--bubble-position": `${(mentors.findIndex((mentor) => mentor.id === selected.id) + 0.5) * (100 / mentors.length)}%` } as CSSProperties}
           >
             <span className="warm-home__bubble-tail" aria-hidden="true" />
-            <div className="warm-home__bubble-mark">{selected.name.replace("小愈·", "")}</div>
+            <div className="warm-home__bubble-mark">{selectedInfo.mark}</div>
             <div>
               <p className="warm-home__bubble-title">{selectedInfo.name}（{selectedInfo.school}）</p>
               <p>{selectedInfo.description}</p>

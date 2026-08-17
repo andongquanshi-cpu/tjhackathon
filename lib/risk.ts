@@ -38,8 +38,8 @@ export function evaluateRisk(content: string, profile: Profile | null): RiskSign
   }
 
   const lowDimensions =
-    profile &&
-    Object.values(profile.dimensions).filter((score) => score <= 25).length >= 2;
+    profile?.sixDim &&
+    Object.values(profile.sixDim.scores).filter((score) => score < 10).length >= 2;
   if (contains(normalized, CONCERN) || lowDimensions) {
     return {
       level: "concern",

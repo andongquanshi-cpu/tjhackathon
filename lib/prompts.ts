@@ -33,6 +33,7 @@ export interface DailyGuide {
     title: string;
     description: string;
     duration: string;
+    hint?: string;
   }[];
 }
 
@@ -74,20 +75,23 @@ export const DAILY_GUIDES: DailyGuide[] = DAY_PROMPTS.map((prompt, index) => {
         title: "记录与标记",
         description: prompt,
         duration: "约 3 分钟",
+        hint: "点文字去写下一句；圆点用来勾选完成",
       },
       {
         id: `day-${day}-practice`,
         part: "PART 2",
-        title: "今日微练习",
-        description: `带着「${theme}」过今天：选择一个普通时刻，停下来观察十秒，不评价，也不急着改变。`,
-        duration: "约 2 分钟",
+        title: "今日微练习 · 正念",
+        description: `带着「${theme}」做一段短冥想：停下来观察十秒，不评价，也不急着改变。`,
+        duration: "约 3 分钟",
+        hint: "点文字进入正念冥想",
       },
       {
         id: `day-${day}-body`,
         part: "PART 3",
-        title: "身体觉察",
-        description: "从额头到脚底缓慢扫描一次身体，找到最明显的感受，为它留出三次呼吸。",
+        title: "身体觉察 · 呼吸",
+        description: "把注意力放到呼吸上，跟着节奏慢慢松开身体里最紧的地方。",
         duration: "约 2 分钟",
+        hint: "点文字进入呼吸练习",
       },
     ],
   };

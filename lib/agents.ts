@@ -2,24 +2,24 @@ import { chatCompletion, isLLMConfigured } from "./ai";
 import { analyzeInput } from "./input-analysis";
 import { callExternalAgent, getAgentId } from "./external-agents";
 import { getSchool, SCHOOLS, type SchoolPersona } from "./personas";
-import { DIM_META } from "./assessment";
+import { SIX_DIM_META } from "./six-dim";
 import type {
   ChatMessage,
   AgentSource,
-  DimKey,
   Note,
   Profile,
   SchoolComment,
   SchoolId,
 } from "./types";
 
-const clamp = (v: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, v));
 const snippet = (s: string, n = 24) => (s.length > n ? s.slice(0, n) + "…" : s);
 
 export function profileDigest(p: Profile | null): string {
-  if (!p) return "用户尚未完成初始测评";
-  const dims = DIM_META.map((d) => `${d.label}${Math.round(p.dimensions[d.key])}`).join("、");
-  return `画像维度：${dims}。核心议题：${p.coreIssues.join("、") || "暂无"}。认知模式：${p.cognitivePatterns.join("、") || "暂无"}。优势资源：${p.strengths.join("、") || "暂无"}。`;
+  if (!p?.sixDim) return "用户尚未完成初始测评";
+  const dims = SIX_DIM_META.map(
+    (d) => `${d.label}${Math.round(p.sixDim.scores[d.key])}`
+  ).join("、");
+  return `人格：${p.sixDim.personaName}（${p.sixDim.letterCode} / ${p.sixDim.bits}）。六维得分：${dims}。核心议题：${p.coreIssues.join("、") || "暂无"}。认知模式：${p.cognitivePatterns.join("、") || "暂无"}。优势资源：${p.strengths.join("、") || "暂无"}。`;
 }
 
 // ---------------- Mock（仅当 LLM 不可用时兜底） ----------------
@@ -227,33 +227,19 @@ export async function chatWithSchool(opts: {
   };
 }
 
-// ---------------- 画像蒸馏 ----------------
-
-const DIM_BY_SCHOOL: Record<SchoolId, Partial<Record<DimKey, number>>> = {
-  humanistic: { selfCare: 1.5, emotion: 0.5 },
-  psychodynamic: { emotion: 1 },
-  cognitive: { stress: 1, mindfulness: 0.5 },
-  postmodern: { emotion: 1, mindfulness: 0.5 },
-};
+// ---------------- 画像蒸馏（不改六维分，只沉淀议题/模式/优势/时间线） ----------------
 
 export function heuristicDistill(
   note: Note,
   schoolId: SchoolId | null,
   profile: Profile
 ): Profile {
-  const dims = { ...profile.dimensions };
-  dims.mindfulness = clamp(dims.mindfulness + 1);
-  if (schoolId) {
-    for (const [k, v] of Object.entries(DIM_BY_SCHOOL[schoolId])) {
-      dims[k as DimKey] = clamp(dims[k as DimKey] + (v as number));
-    }
-  }
   const label = schoolId ? getSchool(schoolId).name : "小愈";
   const entry = schoolId
     ? `Day ${note.day}：与 ${label} 深入对话`
     : `Day ${note.day}：写下便签`;
   const timeline = [...profile.timeline, entry].slice(-30);
-  return { ...profile, dimensions: dims, timeline, updatedAt: new Date().toISOString() };
+  return { ...profile, timeline, updatedAt: new Date().toISOString() };
 }
 
 function extractJson(s: string): string {
@@ -264,14 +250,6 @@ function extractJson(s: string): string {
 }
 
 function mergeDistill(base: Profile, parsed: Record<string, unknown>): Profile {
-  const dims = { ...base.dimensions };
-  const deltas = parsed.dimensionDeltas as Record<string, unknown> | undefined;
-  if (deltas && typeof deltas === "object") {
-    for (const d of DIM_META) {
-      const v = Number(deltas[d.key]);
-      if (Number.isFinite(v)) dims[d.key] = clamp(dims[d.key] + v);
-    }
-  }
   const add = (arr: string[], list: unknown): string[] =>
     [
       ...arr,
@@ -281,14 +259,13 @@ function mergeDistill(base: Profile, parsed: Record<string, unknown>): Profile {
     ].slice(0, 20);
   return {
     ...base,
-    dimensions: dims,
     coreIssues: add(base.coreIssues, parsed.coreIssues),
     cognitivePatterns: add(base.cognitivePatterns, parsed.cognitivePatterns),
     strengths: add(base.strengths, parsed.strengths),
   };
 }
 
-/** 深聊后更新画像：LLM 蒸馏 + 启发式兜底 */
+/** 深聊后更新画像：LLM 蒸馏 + 启发式兜底（六维分只由测评锁定） */
 export async function distillAfterChat(
   note: Note,
   schoolId: SchoolId,
@@ -304,12 +281,11 @@ export async function distillAfterChat(
       .slice(-8)
       .map((m) => `${m.role === "user" ? "用户" : persona.name}：${m.content}`)
       .join("\n");
-    const prompt = `以下是用户与「${persona.name}」（${persona.school}）围绕便签「${snippet(note.content, 40)}」的对话。请从对话中提炼画像增量，只输出 JSON：
+    const prompt = `以下是用户与「${persona.name}」（${persona.school}）围绕便签「${snippet(note.content, 40)}」的对话。请从对话中提炼画像增量，只输出 JSON（不要改动六维分数）：
 {
   "coreIssues": ["新增或得到确认的核心议题，不重复已有"],
   "cognitivePatterns": ["观察到的认知模式"],
-  "strengths": ["观察到的优势资源"],
-  "dimensionDeltas": {"emotion": 0, "stress": 0, "selfCare": 0, "connection": 0, "mindfulness": 0}
+  "strengths": ["观察到的优势资源"]
 }
 已有核心议题：${profile.coreIssues.join("、") || "无"}
 已有认知模式：${profile.cognitivePatterns.join("、") || "无"}

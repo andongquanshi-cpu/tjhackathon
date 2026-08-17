@@ -1,19 +1,23 @@
 "use client";
 
-import { DIM_META } from "@/lib/assessment";
-import type { DimKey } from "@/lib/types";
+import { SIX_DIM_META, type SixDimKey } from "@/lib/six-dim";
 
 export default function RadarChart({
   values,
   size = 320,
+  max = 20,
+  threshold = 12,
 }: {
-  values: Record<DimKey, number>;
+  values: Record<SixDimKey, number>;
   size?: number;
+  max?: number;
+  threshold?: number;
 }) {
   const cx = size / 2;
   const cy = size / 2;
   const r = size / 2 - 44;
-  const n = DIM_META.length;
+  const n = SIX_DIM_META.length;
+  const ratioOf = (score: number) => Math.max(0, Math.min(1, score / max));
 
   const angle = (i: number) => (Math.PI * 2 * i) / n - Math.PI / 2;
   const pt = (i: number, ratio: number): [number, number] => [
@@ -22,12 +26,14 @@ export default function RadarChart({
   ];
 
   const rings = [0.25, 0.5, 0.75, 1].map((ratio) =>
-    DIM_META.map((_, i) => pt(i, ratio).join(",")).join(" ")
+    SIX_DIM_META.map((_, i) => pt(i, ratio).join(",")).join(" ")
   );
-
-  const valuePoints = DIM_META.map((d, i) => pt(i, values[d.key] / 100).join(",")).join(
-    " "
-  );
+  const thresholdPoints = SIX_DIM_META.map((_, i) =>
+    pt(i, ratioOf(threshold)).join(",")
+  ).join(" ");
+  const valuePoints = SIX_DIM_META.map((d, i) =>
+    pt(i, ratioOf(values[d.key] ?? 0)).join(",")
+  ).join(" ");
 
   return (
     <svg
@@ -35,7 +41,7 @@ export default function RadarChart({
       height={size}
       viewBox={`0 0 ${size} ${size}`}
       role="img"
-      aria-label="心理画像雷达图"
+      aria-label="六维心理画像雷达图"
       className="mx-auto"
     >
       {rings.map((points, i) => (
@@ -47,22 +53,29 @@ export default function RadarChart({
           strokeWidth={i === rings.length - 1 ? 1.5 : 1}
         />
       ))}
-      {DIM_META.map((_, i) => {
+      <polygon
+        points={thresholdPoints}
+        fill="none"
+        stroke="#c4b59a"
+        strokeWidth={1.5}
+        strokeDasharray="4 4"
+      />
+      {SIX_DIM_META.map((_, i) => {
         const [x, y] = pt(i, 1);
         return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="#e2e8f0" strokeWidth={1} />;
       })}
       <polygon
         points={valuePoints}
-        fill="rgba(16,185,129,0.25)"
-        stroke="#10b981"
+        fill="rgba(49,95,85,0.22)"
+        stroke="#315f55"
         strokeWidth={2.5}
         strokeLinejoin="round"
       />
-      {DIM_META.map((d, i) => {
-        const [x, y] = pt(i, values[d.key] / 100);
+      {SIX_DIM_META.map((d, i) => {
+        const [x, y] = pt(i, ratioOf(values[d.key] ?? 0));
         return <circle key={d.key} cx={x} cy={y} r={4} fill={d.color} stroke="#fff" strokeWidth={1.5} />;
       })}
-      {DIM_META.map((d, i) => {
+      {SIX_DIM_META.map((d, i) => {
         const [x, y] = pt(i, 1.22);
         return (
           <text
@@ -71,11 +84,11 @@ export default function RadarChart({
             y={y}
             textAnchor="middle"
             dominantBaseline="middle"
-            fontSize={12}
+            fontSize={11}
             fill={d.color}
             fontWeight={600}
           >
-            {d.label} {Math.round(values[d.key])}
+            {d.label} {Math.round(values[d.key] ?? 0)}
           </text>
         );
       })}

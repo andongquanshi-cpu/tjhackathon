@@ -58,7 +58,7 @@ export default function DayDetailView({
           <header><span className="eyebrow">DAILY GUIDE</span><b>{completed}/3</b></header>
           <h2>{guide.theme}</h2>
           <p>{guide.tasks[0].description}</p>
-          <Link href={`/guide?day=${day}`}>{completed === 3 ? "回看今日导单" : "继续完成导单"} →</Link>
+          <Link href="/journal">{completed === 3 ? "回主界面看今日纸卷" : "回主界面继续今日小事"} →</Link>
         </section>
 
         <section className="day-section">

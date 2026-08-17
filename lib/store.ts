@@ -7,7 +7,7 @@ const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), ".data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 
 function emptyDB(): DB {
-  return { version: 3, profile: null, notes: [], guideProgress: [] };
+  return { version: 4, profile: null, notes: [], guideProgress: [] };
 }
 
 /** 演示模式下首次运行自动写入种子数据，开箱即有内容 */
@@ -18,7 +18,13 @@ function ensureSeeded(): void {
     return;
   }
   const { notes, profile } = buildSeedData();
-  writeDB({ version: 3, profile, notes, guideProgress: [] });
+  writeDB({ version: 4, profile, notes, guideProgress: [] });
+}
+
+function normalizeProfile(profile: Profile | null | undefined): Profile | null {
+  if (!profile) return null;
+  if (!profile.sixDim?.scores) return null;
+  return profile;
 }
 
 function readDB(): DB {
@@ -29,7 +35,8 @@ function readDB(): DB {
     return {
       ...emptyDB(),
       ...db,
-      version: 3,
+      version: 4,
+      profile: normalizeProfile(db.profile as Profile | null),
       notes: (db.notes ?? []).map((note) => ({
         ...note,
         risk: note.risk ?? null,
@@ -45,6 +52,10 @@ function readDB(): DB {
 
 function writeDB(db: DB): void {
   fs.mkdirSync(DATA_DIR, { recursive: true });
+  writeDBFile({ ...db, version: 4 });
+}
+
+function writeDBFile(db: DB): void {
   fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf-8");
 }
 
@@ -122,7 +133,7 @@ export function resetDB(): void {
 }
 
 export function seedDB(notes: Note[], profile: Profile | null): void {
-  writeDB({ version: 3, profile, notes, guideProgress: [] });
+  writeDB({ version: 4, profile, notes, guideProgress: [] });
 }
 
 /** 当前训练营第几天（1-21），以初始测评为起点 */

@@ -1,13 +1,14 @@
 import { chatCompletion, isLLMConfigured } from "./ai";
 import { profileDigest } from "./agents";
 import type { Note, Profile } from "./types";
+import { SIX_DIM_META } from "./six-dim";
 
 const snippet = (s: string, n = 30) => (s.length > n ? s.slice(0, n) + "…" : s);
 
 export function mockSummary(profile: Profile, notes: Note[], phase: number): string {
-  const dims = Object.entries(profile.dimensions)
-    .map(([k, v]) => `${k === "emotion" ? "情绪稳定" : k === "stress" ? "压力应对" : k === "selfCare" ? "自我关怀" : k === "connection" ? "社会连接" : "正念觉察"} ${Math.round(v)}`)
-    .join("、");
+  const dims = profile.sixDim
+    ? SIX_DIM_META.map((d) => `${d.label}${Math.round(profile.sixDim.scores[d.key])}`).join("、")
+    : "尚未完成六维测评";
   const topIssue = profile.coreIssues[0] ?? "还没浮现出特别明显的议题";
   const strength = profile.strengths[0] ?? "愿意持续记录";
   const recent = notes.slice(-3).reverse();
@@ -21,13 +22,13 @@ export function mockSummary(profile: Profile, notes: Note[], phase: number): str
 
 ${noteLines}
 
-你的画像正慢慢浮现：${dims}。
+六维画像：${profile.sixDim ? `${profile.sixDim.personaName}（${profile.sixDim.letterCode}）` : "未测评"}；维度：${dims}。
 
 目前最常出现的议题是「${topIssue}」，而我看到你身上一直亮着的资源是「${strength}」——它不是别人给的，是你自己带进来的。
 
 下一阶段，小愈想陪你做一件事：把「看见」变成「一小步行动」。不用很大，够得着就好。
 
-—— 小愈 🌱`;
+—— 小愈`;
 }
 
 export async function generatePhaseSummary(
@@ -55,7 +56,7 @@ export async function generatePhaseSummary(
       );
       return { summary, phase };
     } catch (err) {
-      console.error("[summary] fallback", err);
+      console.error("[summary] llm failed, fallback mock", err);
     }
   }
   return { summary: mockSummary(profile, notes, phase), phase };

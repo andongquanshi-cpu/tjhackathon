@@ -5,13 +5,36 @@ export type SchoolId =
   | "cognitive"
   | "postmodern";
 
-/** 画像维度 */
+/** 画像维度（旧五维，已废弃；保留类型仅防残留引用） */
 export type DimKey =
   | "emotion"
   | "stress"
   | "selfCare"
   | "connection"
   | "mindfulness";
+
+export type SixDimKey =
+  | "agency"
+  | "attachment"
+  | "defense"
+  | "action"
+  | "processing"
+  | "decision";
+
+export interface SixDimProfile {
+  /** 各维 4-20 分 */
+  scores: Record<SixDimKey, number>;
+  /** 6 位二进制，如 111011 */
+  bits: string;
+  /** 字母代码，如 ASO PRL */
+  letterCode: string;
+  personaName: string;
+  personaTagline: string;
+  assessedAt: string;
+  answers?: Record<string, number>;
+  /** AI / 模板报告正文 */
+  report?: string;
+}
 
 export interface SchoolComment {
   school: SchoolId;
@@ -93,8 +116,8 @@ export interface Note {
 export interface Profile {
   createdAt: string;
   updatedAt: string;
-  /** 0-100 */
-  dimensions: Record<DimKey, number>;
+  /** 六维测评结果：只由测评决定，圆桌深聊不改分 */
+  sixDim: SixDimProfile;
   coreIssues: string[];
   cognitivePatterns: string[];
   strengths: string[];
@@ -102,7 +125,7 @@ export interface Profile {
 }
 
 export interface DB {
-  version: 1 | 2 | 3;
+  version: 1 | 2 | 3 | 4;
   profile: Profile | null;
   notes: Note[];
   guideProgress: DailyGuideProgress[];

@@ -3,9 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { DailyGuideProgress, Note, Profile } from "@/lib/types";
+import type { CSSProperties } from "react";
+import type { DailyGuideProgress, Note, Profile, SchoolId } from "@/lib/types";
+import { SCHOOLS } from "@/lib/personas";
+import { MENTOR_DISPLAY } from "@/lib/mentors";
 import { dailyGuide } from "@/lib/prompts";
+import { guideTaskAction, practiceHref } from "@/lib/practice";
 import XiaoyuAvatar from "@/components/XiaoyuAvatar";
+import MentorPortrait from "@/components/MentorPortrait";
 import AppNav from "@/components/AppNav";
 
 const MOOD = [
@@ -15,33 +20,6 @@ const MOOD = [
   { v: 4, e: "暖", label: "不错" },
   { v: 5, e: "晴", label: "晴朗" },
 ];
-
-const FEATURE_MODULES = [
-  {
-    id: "meditation",
-    eyebrow: "MINDFULNESS",
-    title: "正念冥想",
-    description: "把注意力轻轻带回当下，给自己一段安静停留的时间。",
-  },
-  {
-    id: "woodfish",
-    eyebrow: "GENTLE WISH",
-    title: "木鱼祈愿",
-    description: "跟随缓慢的节奏，放下一份心愿，也放松片刻。",
-  },
-  {
-    id: "breathing",
-    eyebrow: "BREATHE",
-    title: "呼吸练习",
-    description: "用几分钟感受呼吸，让身体从紧绷中慢慢松开。",
-  },
-  {
-    id: "classroom",
-    eyebrow: "MICRO CLASS",
-    title: "心理微课堂",
-    description: "用轻量的小知识，理解情绪、关系与内在模式。",
-  },
-] as const;
 
 export default function JournalPage() {
   const router = useRouter();
@@ -56,7 +34,8 @@ export default function JournalPage() {
   const [alertDismissed, setAlertDismissed] = useState(false);
   const [ready, setReady] = useState(false);
   const [showFirstGuide, setShowFirstGuide] = useState(false);
-  const [scrollOpen, setScrollOpen] = useState(false);
+  const [todoOpen, setTodoOpen] = useState(true);
+  const [selectedId, setSelectedId] = useState<SchoolId>(SCHOOLS[0].id);
   const [guideCompleted, setGuideCompleted] = useState<string[]>([]);
   const [guideSaving, setGuideSaving] = useState(false);
   const [guideMessage, setGuideMessage] = useState("");
@@ -115,6 +94,7 @@ export default function JournalPage() {
     ? Math.min(21, Math.floor((Date.now() - new Date(profile.createdAt).getTime()) / 86_400_000) + 1)
     : 1;
   const guide = dailyGuide(day);
+  const selectedInfo = MENTOR_DISPLAY[selectedId];
   const dismissFirstGuide = () => {
     window.localStorage.setItem("yuxingxiang-journal-intro-seen", "true");
     setShowFirstGuide(false);
@@ -146,31 +126,75 @@ export default function JournalPage() {
     }
   };
 
+  const openTaskAction = (taskId: string) => {
+    const action = guideTaskAction(taskId);
+    if (action.kind === "compose") {
+      setComposerOpen(true);
+      return;
+    }
+    if (action.kind === "practice") {
+      router.push(practiceHref(action.practiceId, day, taskId));
+    }
+  };
+
   return (
     <main className="journey-dashboard">
       <AppNav day={day} />
 
       <div className="journey-dashboard__layout">
-        <aside className="journey-dashboard__records">
-          <div className="journey-dashboard__heading">
-            <span className="eyebrow">TODAY&apos;S RECORD</span>
-            <h1>记录此刻</h1>
-            <p>不必完整，一句话也能成为圆桌会谈的开始。</p>
+        <section className="journey-dashboard__roundtable" aria-label="圆桌时刻">
+          <header className="journey-dashboard__hero">
+            <div>
+              <span className="eyebrow">ROUNDTABLE MOMENT</span>
+              <h1>圆桌时刻</h1>
+              <p>写下这一刻，四位导师会与你围坐倾听。这是今天最主要的路径。</p>
+            </div>
+            <button
+              onClick={() => setComposerOpen(true)}
+              className="journey-dashboard__add"
+              aria-label="写下新的记录并进入圆桌"
+            >
+              <span>＋</span>
+              <div>
+                <b>写下一句</b>
+                <small>保存后直接进入圆桌会谈</small>
+              </div>
+            </button>
+          </header>
+
+          <div className="journey-dashboard__mentors" role="tablist" aria-label="四位导师">
+            {SCHOOLS.map((mentor, index) => {
+              const info = MENTOR_DISPLAY[mentor.id];
+              const isSelected = mentor.id === selectedId;
+              return (
+                <button
+                  key={mentor.id}
+                  type="button"
+                  className={`journey-dashboard__mentor-card ${isSelected ? "is-selected" : ""}`}
+                  onClick={() => setSelectedId(mentor.id)}
+                  role="tab"
+                  aria-selected={isSelected}
+                >
+                  <span className="warm-home__number">0{index + 1}</span>
+                  <MentorPortrait feature={info.feature} />
+                  <strong>{mentor.name}</strong>
+                  <small>{info.school}</small>
+                </button>
+              );
+            })}
           </div>
-          <button onClick={() => setComposerOpen(true)} className="journey-dashboard__add" aria-label="写下新的记录">
-            <span>＋</span>
-            <small>写下一句</small>
-          </button>
-          <div className="journey-dashboard__record-list">
-            {sorted.length === 0 && <p>还没有记录。按下加号，让今天被听见。</p>}
-            {sorted.map((note) => (
-              <Link key={note.id} href={`/notes/${note.id}`} className="journey-dashboard__record">
-                <span>DAY {note.day}</span>
-                <p>{note.content}</p>
-                <b>{note.feedback ? "查看反馈" : note.comments ? "继续圆桌" : "进入圆桌"} →</b>
-              </Link>
-            ))}
-          </div>
+
+          <article
+            className="journey-dashboard__bubble warm-home__bubble"
+            style={{ "--bubble-position": `${(SCHOOLS.findIndex((m) => m.id === selectedId) + 0.5) * 25}%` } as CSSProperties}
+          >
+            <span className="warm-home__bubble-tail" aria-hidden="true" />
+            <div className="warm-home__bubble-mark">{selectedInfo.mark}</div>
+            <div>
+              <p className="warm-home__bubble-title">{selectedInfo.name}（{selectedInfo.school}）</p>
+              <p>{selectedInfo.description}</p>
+            </div>
+          </article>
 
           {sorted[0]?.risk && !alertDismissed && (
             <div className={`mentor-alert alert-${sorted[0].risk.level}`}>
@@ -186,90 +210,84 @@ export default function JournalPage() {
               </div>
             </div>
           )}
+        </section>
 
-          <div className="journey-dashboard__mentor-stack" aria-label="四位导师">
-            {[
-              ["humanistic", "暖"],
-              ["psychodynamic", "镜"],
-              ["cognitive", "思"],
-              ["postmodern", "叙"],
-            ].map(([variant, label], index) => (
-              <div key={variant} className={`journey-dashboard__mentor journey-dashboard__mentor--${index + 1}`}>
-                <XiaoyuAvatar variant={variant as "humanistic" | "psychodynamic" | "cognitive" | "postmodern"} size="sm" />
-                <span>{label}</span>
-              </div>
-            ))}
-            <p>“今天想从哪个感受开始聊起？”</p>
+        <aside className="journey-dashboard__history" aria-label="历史记录">
+          <div className="journey-dashboard__history-head">
+            <span className="eyebrow">HISTORY</span>
+            <h2>历史记录</h2>
+            <p>{sorted.length} 条 · 点击继续圆桌</p>
           </div>
-        </aside>
 
-        <section className="journey-dashboard__main">
+          <div className="journey-dashboard__record-list">
+            {sorted.length === 0 && (
+              <p className="journey-dashboard__empty">还没有记录。先从左侧写下一句开始。</p>
+            )}
+            {sorted.map((note) => (
+              <Link key={note.id} href={`/notes/${note.id}`} className="journey-dashboard__record">
+                <span>DAY {note.day}</span>
+                <p>{note.content}</p>
+                <b>{note.feedback ? "反馈" : note.comments ? "继续" : "圆桌"} →</b>
+              </Link>
+            ))}
+          </div>
+
           <button
             type="button"
-            className={`journey-dashboard__hanging ${scrollOpen ? "is-down" : ""}`}
-            onClick={() => setScrollOpen((open) => !open)}
-            aria-expanded={scrollOpen}
+            className={`journey-dashboard__hanging ${todoOpen ? "is-down" : ""}`}
+            onClick={() => setTodoOpen((open) => !open)}
+            aria-expanded={todoOpen}
           >
             <span className="journey-dashboard__rope" />
             <XiaoyuAvatar variant="host" size="md" />
-            <span className="journey-dashboard__hanging-hint">{scrollOpen ? "收起今日小事" : "点我看看今天能做什么"}</span>
+            <span className="journey-dashboard__hanging-hint">{todoOpen ? "收起今日小事" : "点我展开今日待办"}</span>
           </button>
-          {scrollOpen && (
-            <aside className="journey-dashboard__scroll fade-up">
-              <span>小愈带来的今日纸卷</span>
+
+          {todoOpen && (
+            <aside className="journey-dashboard__todo fade-up" aria-label="今日待办">
+              <span>今日小事 · TODO</span>
               <div className="journey-dashboard__scroll-heading">
                 <strong>DAY {String(day).padStart(2, "0")} · {guide.theme}</strong>
-                <small>{guideCompleted.length}/{guide.tasks.length} 已完成</small>
+                <small>{guideCompleted.length}/{guide.tasks.length}</small>
               </div>
               <p>{guide.subtitle}</p>
               <div className="journey-dashboard__scroll-tasks">
                 {guide.tasks.map((task) => {
                   const checked = guideCompleted.includes(task.id);
+                  const action = guideTaskAction(task.id);
                   return (
-                    <button
+                    <div
                       key={task.id}
-                      type="button"
-                      onClick={() => toggleGuideTask(task.id)}
-                      disabled={guideSaving}
-                      className={checked ? "is-complete" : ""}
+                      className={`journey-dashboard__scroll-task ${checked ? "is-complete" : ""}`}
                     >
-                      <span className="journey-dashboard__scroll-check">{checked ? "✓" : ""}</span>
-                      <span>
+                      <button
+                        type="button"
+                        className="journey-dashboard__scroll-check"
+                        onClick={() => toggleGuideTask(task.id)}
+                        disabled={guideSaving}
+                        aria-label={checked ? `取消完成：${task.title}` : `标记完成：${task.title}`}
+                        aria-pressed={checked}
+                      >
+                        {checked ? "✓" : ""}
+                      </button>
+                      <button
+                        type="button"
+                        className="journey-dashboard__scroll-action"
+                        onClick={() => openTaskAction(task.id)}
+                      >
                         <b>{task.title}</b>
                         <small>{task.part} · {task.duration}</small>
-                      </span>
-                    </button>
+                        <em>{task.hint ?? action.label}</em>
+                        <span>{action.label} →</span>
+                      </button>
+                    </div>
                   );
                 })}
               </div>
               {guideMessage && <p className="journey-dashboard__scroll-message">{guideMessage}</p>}
             </aside>
           )}
-
-          {FEATURE_MODULES.map((feature) => (
-            <section
-              key={feature.id}
-              className={`journey-dashboard__card journey-dashboard__feature journey-dashboard__feature--${feature.id}`}
-            >
-              <span className="eyebrow">{feature.eyebrow}</span>
-              <div>
-                <h2>{feature.title}</h2>
-                <p>{feature.description}</p>
-              </div>
-              <button type="button" className="journey-dashboard__card-button" disabled>
-                即将开放
-              </button>
-            </section>
-          ))}
-
-          <Link href={`/calendar/${day}`} className="journey-dashboard__generate">
-            <span>
-              <small>GENERATE TODAY&apos;S FORM</small>
-              <b>生成今日总结表单</b>
-            </span>
-            <i>↗</i>
-          </Link>
-        </section>
+        </aside>
       </div>
 
       {ready && showFirstGuide && (
