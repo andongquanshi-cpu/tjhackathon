@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { generateComments } from "@/lib/agents";
 import { evaluateRisk } from "@/lib/risk";
 import { getNote, getProfile, updateNote } from "@/lib/store";
+import { recallUserMemory, resolveMemoryUserId } from "@/lib/memory";
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -23,7 +24,8 @@ export async function POST(
     return NextResponse.json({ comments: note.comments });
   }
 
-  const comments = await generateComments(note, getProfile());
+  const sharedMemory = await recallUserMemory(resolveMemoryUserId(req), note.content);
+  const comments = await generateComments(note, getProfile(), sharedMemory);
   const updated = updateNote(id, { comments });
   return NextResponse.json({ comments: updated?.comments ?? comments });
 }

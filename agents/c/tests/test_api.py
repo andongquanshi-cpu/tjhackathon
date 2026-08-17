@@ -72,3 +72,10 @@ def test_respond_without_key_uses_role_fallback_and_no_network(monkeypatch) -> N
     assert body["sources"][0]["source"] == "bandura_mastery_proximal.md"
     assert "微步骤" in body["skills"]
     assert 120 <= len(body["response"]) <= 220
+
+
+def test_tired_input_returns_pause_without_retrieval(monkeypatch) -> None:
+    monkeypatch.setattr(api_main, "get_chain", lambda: (_ for _ in ()).throw(AssertionError("must not retrieve")))
+    response = TestClient(app).post("/respond", json={"user_text": "我累了", "needs_pause": True})
+    assert response.json()["skills"] == ["fatigue-pause-detection"]
+    assert response.json()["sources"] == []

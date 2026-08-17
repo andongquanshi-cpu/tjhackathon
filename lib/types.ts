@@ -64,6 +64,7 @@ export interface DailyGuideProgress {
 }
 
 export interface LocalUser {
+  id?: string;
   displayName: string;
   createdAt: string;
 }

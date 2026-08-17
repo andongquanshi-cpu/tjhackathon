@@ -1,64 +1,24 @@
 from fastapi.testclient import TestClient
 
-from src.api.main import app, get_app_settings, get_chain, get_store
-from src.config import Settings
-from src.retrieval.hybrid import RetrievalHit
+from src.api.main import app
 
 
-class FakeStore:
-    collection = "psychoanalysis"
-
-    def count(self) -> int:
-        return 2
-
-
-class FakeChain:
-    def query(self, question: str, school=None, author=None, top_n=None, rerank=True):
-        return [
-            RetrievalHit(
-                text="无意识通过梦与口误返回。",
-                score=0.91,
-                metadata={
-                    "author": "Sigmund Freud",
-                    "school": school or "Freud",
-                    "source_document": "freud_unconscious.md",
-                    "concepts": ["unconscious"],
-                },
-                source="rerank",
-            )
-        ]
-
-
-def test_health_endpoint_reports_qdrant_and_collection() -> None:
-    app.dependency_overrides[get_store] = lambda: FakeStore()
-    app.dependency_overrides[get_app_settings] = lambda: Settings()
+def test_health_reports_knowledge_disabled() -> None:
     client = TestClient(app)
 
     response = client.get("/health")
 
-    app.dependency_overrides.clear()
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert body["collection"] == "rogers_reserved"
-    assert body["points"] == 2
+    assert body["knowledge"] == "disabled"
 
 
-def test_query_endpoint_returns_agent_friendly_payload() -> None:
-    app.dependency_overrides[get_chain] = lambda: FakeChain()
+def test_knowledge_endpoints_are_not_exposed() -> None:
     client = TestClient(app)
 
-    response = client.post(
-        "/query",
-        json={"query": "什么是无意识？", "school": "Freud", "rerank": True},
-    )
-
-    app.dependency_overrides.clear()
-    assert response.status_code == 200
-    body = response.json()
-    assert body["query"] == "什么是无意识？"
-    assert body["results"][0]["metadata"]["school"] == "Freud"
-    assert body["results"][0]["source"] == "rerank"
+    assert client.post("/query", json={"query": "test"}).status_code == 404
+    assert client.post("/ingest", json={}).status_code == 404
 
 
 def _respond_payload(safety_level: str = "S0") -> dict:
@@ -100,3 +60,12 @@ def test_respond_without_key_uses_rogers_offline_template(monkeypatch) -> None:
     assert "最希望被理解" in body["response"]
     assert body["sources"] == []
     assert body["degraded"] is True
+
+
+def test_tired_input_returns_pause_only() -> None:
+    client = TestClient(app)
+    response = client.post("/respond", json={"user_text": "我累了，不想说了", "needs_pause": True})
+    body = response.json()
+    assert body["skills"] == ["fatigue-pause-detection"]
+    assert "不继续分析" in body["response"]
+    assert "练习" in body["response"]

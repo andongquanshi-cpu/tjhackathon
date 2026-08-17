@@ -69,6 +69,7 @@ export async function callExternalAgent(opts: {
   analysis: InputAnalysis;
   noteContent?: string;
   profileDigest?: string;
+  sharedMemory?: string;
   history?: ChatMessage[];
 }): Promise<ExternalAgentResponse | null> {
   const url = getAgentUrl(opts.school);
@@ -85,6 +86,7 @@ export async function callExternalAgent(opts: {
         user_text: opts.analysis.rawInput,
         note_content: opts.noteContent ?? null,
         profile_digest: opts.profileDigest ?? null,
+        shared_memory: opts.sharedMemory ?? null,
         history: (opts.history ?? []).map((message) => ({
           role: message.role,
           content: message.content,
@@ -92,6 +94,7 @@ export async function callExternalAgent(opts: {
         safety_level: opts.analysis.safetyLevel,
         intents: opts.analysis.intents,
         topics: opts.analysis.topics,
+        needs_pause: opts.analysis.needsPause,
       }),
       signal: controller.signal,
       cache: "no-store",

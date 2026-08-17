@@ -10,6 +10,7 @@ export interface InputAnalysis {
   intents: string[];
   topics: string[];
   needsClarification: boolean;
+  needsPause: boolean;
 }
 
 const TOPIC_RULES: Array<[string, RegExp]> = [
@@ -49,6 +50,7 @@ export function analyzeInput(opts: {
   storedRisk?: RiskSignal | null;
 }): InputAnalysis {
   const rawInput = opts.input.trim();
+  const needsPause = /(?:我)?(?:好|太|很)?累(?:了|死了)?|疲惫|撑不住|不想继续(?:说|聊)?|不想说了|先停(?:一下)?|想休息/.test(rawInput);
   const recentHistory = (opts.history ?? [])
     .slice(-4)
     .map((message) => `${message.role === "user" ? "用户" : "导师"}：${message.content}`)
@@ -73,5 +75,6 @@ export function analyzeInput(opts: {
     intents: detectIntents(resolvedInput),
     topics: topics.length ? topics : ["一般心理困扰"],
     needsClarification: short && !context && !/不想活|自杀|自伤|伤害/.test(rawInput),
+    needsPause,
   };
 }

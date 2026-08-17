@@ -4,6 +4,7 @@ import { SCHOOL_IDS } from "@/lib/personas";
 import { evaluateRisk } from "@/lib/risk";
 import { getNote, getProfile, setProfile, updateNote } from "@/lib/store";
 import type { ChatMessage, SchoolId } from "@/lib/types";
+import { recallUserMemory, rememberTurn, resolveMemoryUserId } from "@/lib/memory";
 
 export async function POST(
   req: Request,
@@ -24,6 +25,7 @@ export async function POST(
   }
 
   const now = new Date().toISOString();
+  const memoryUserId = resolveMemoryUserId(req);
   const history: ChatMessage[] = note.conversations[school] ?? [];
 
   const userMsg: ChatMessage = { role: "user", school, content: message, createdAt: now };
@@ -47,12 +49,14 @@ export async function POST(
     return NextResponse.json({ reply: safeReply, risk, safetyShortCircuit: true });
   }
 
+  const sharedMemory = await recallUserMemory(memoryUserId, `${note.content}\n${message}`);
   const reply = await chatWithSchool({
     note,
     school,
     history,
     userMsg: message,
     profile: getProfile(),
+    sharedMemory,
   });
   const replyMsg: ChatMessage = {
     role: "assistant",
@@ -69,6 +73,14 @@ export async function POST(
   updateNote(id, {
     selectedSchool: school,
     conversations: { ...note.conversations, [school]: messages },
+  });
+
+  await rememberTurn({
+    userId: memoryUserId,
+    userText: message,
+    assistantText: reply.content,
+    agentId: reply.agentId,
+    sessionId: id,
   });
 
   // 画像蒸馏：把对话沉淀进用户画像

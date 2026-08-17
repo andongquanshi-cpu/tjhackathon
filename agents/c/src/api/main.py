@@ -27,6 +27,7 @@ SAFETY_RESPONSE = (
     "你不需要独自承担这一刻。"
 )
 ROLE_NAME = "班杜拉·自我效能教练"
+PAUSE_RESPONSE = "我听见你累了。我们先停在这里，不继续分析，也不做任何练习。你不需要回复；等你想回来时，我们再从这里继续。"
 
 
 @asynccontextmanager
@@ -128,6 +129,7 @@ def _chat_completion(
         f"用户原话：{payload.user_text}\n"
         f"笔记：{payload.note_content or ''}\n"
         f"用户摘要：{payload.profile_digest or ''}\n"
+        f"跨会话用户记忆：{payload.shared_memory or ''}\n"
         f"安全等级：{payload.safety_level}（S1减少任务；S2只给一个低负担动作，并建议连接可信任的人和专业支持）\n"
         f"意图：{', '.join(payload.intents)}；主题：{', '.join(payload.topics)}\n"
         f"近期对话：\n{history}\n\n本轮选用技能：{', '.join(skills)}\n"
@@ -170,6 +172,10 @@ def respond(
     payload: RespondRequest,
     settings: Settings = Depends(get_app_settings),
 ) -> RespondResponse:
+    if payload.needs_pause:
+        return RespondResponse(agent_id="C", role_name=ROLE_NAME, response=PAUSE_RESPONSE,
+            skills=["fatigue-pause-detection"], sources=[], degraded=False,
+            safety_level=payload.safety_level)
     if payload.safety_level == "S3":
         return RespondResponse(
             agent_id="C",

@@ -17,10 +17,12 @@ class RespondRequest(BaseModel):
     user_text: str = Field(..., min_length=1)
     note_content: str | None = None
     profile_digest: str | None = None
+    shared_memory: str | None = None
     history: list[HistoryMessage] = Field(default_factory=list)
     safety_level: SafetyLevel = "S0"
     intents: list[str] = Field(default_factory=list)
     topics: list[str] = Field(default_factory=list)
+    needs_pause: bool = False
 
 
 class ResponseSource(BaseModel):

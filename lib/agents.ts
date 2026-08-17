@@ -15,6 +15,7 @@ import type {
 
 const clamp = (v: number, lo = 0, hi = 100) => Math.max(lo, Math.min(hi, v));
 const snippet = (s: string, n = 24) => (s.length > n ? s.slice(0, n) + "…" : s);
+const PAUSE_RESPONSE = "我听见你累了。我们先停在这里，不继续分析，也不做任何练习。你不需要回复；等你想回来时，我们再从这里继续。";
 
 export function profileDigest(p: Profile | null): string {
   if (!p) return "用户尚未完成初始测评";
@@ -67,7 +68,8 @@ export function mockChatReply(
 
 export async function generateComments(
   note: Note,
-  profile: Profile | null
+  profile: Profile | null,
+  sharedMemory = ""
 ): Promise<SchoolComment[]> {
   const analysis = analyzeInput({
     input: note.content,
@@ -76,6 +78,17 @@ export async function generateComments(
     storedRisk: note.risk,
   });
   const digest = profileDigest(profile);
+  if (analysis.needsPause) {
+    return SCHOOLS.map((persona) => ({
+      school: persona.id,
+      text: PAUSE_RESPONSE,
+      createdAt: new Date().toISOString(),
+      agentId: getAgentId(persona.id),
+      skills: ["fatigue-pause-detection"],
+      sources: [],
+      degraded: false,
+    }));
+  }
   const results = await Promise.allSettled(
     SCHOOLS.map(async (persona) => {
       try {
@@ -84,6 +97,7 @@ export async function generateComments(
           analysis,
           noteContent: note.content,
           profileDigest: digest,
+          sharedMemory,
         });
         if (external) {
           return {
@@ -107,7 +121,7 @@ export async function generateComments(
               { role: "system", content: persona.systemPrompt },
               {
                 role: "user",
-                content: `用户第 ${note.day} 天的便签：\n「${note.content}」\n\n请用你的流派视角对这段内容给出回应。\n安全等级：${analysis.safetyLevel}；意图：${analysis.intents.join("、")}；主题：${analysis.topics.join("、")}。\n\n用户画像参考：${digest}`,
+                content: `用户第 ${note.day} 天的便签：\n「${note.content}」\n\n请用你的流派视角对这段内容给出回应。\n安全等级：${analysis.safetyLevel}；意图：${analysis.intents.join("、")}；主题：${analysis.topics.join("、")}。\n\n用户画像参考：${digest}\n\n${sharedMemory}`,
               },
             ],
             { temperature: 0.8, maxTokens: 400 }
@@ -164,6 +178,7 @@ export async function chatWithSchool(opts: {
   history: ChatMessage[];
   userMsg: string;
   profile: Profile | null;
+  sharedMemory?: string;
 }): Promise<AgentTurnResult> {
   const persona = getSchool(opts.school);
   const { note, history, userMsg, profile } = opts;
@@ -174,6 +189,15 @@ export async function chatWithSchool(opts: {
     profile,
     storedRisk: note.risk,
   });
+  if (analysis.needsPause) {
+    return {
+      content: PAUSE_RESPONSE,
+      agentId: getAgentId(opts.school),
+      skills: ["fatigue-pause-detection"],
+      sources: [],
+      degraded: false,
+    };
+  }
 
   try {
     const external = await callExternalAgent({
@@ -181,6 +205,7 @@ export async function chatWithSchool(opts: {
       analysis,
       noteContent: note.content,
       profileDigest: profileDigest(profile),
+      sharedMemory: opts.sharedMemory,
       history,
     });
     if (external) {
@@ -200,7 +225,7 @@ export async function chatWithSchool(opts: {
     try {
       const sys =
         persona.systemPrompt +
-        `\n\n用户本次便签：\n「${note.content}」\n\n用户画像参考：${profileDigest(profile)}`;
+        `\n\n用户本次便签：\n「${note.content}」\n\n用户画像参考：${profileDigest(profile)}\n\n${opts.sharedMemory ?? ""}`;
       const msgs = [
         { role: "system" as const, content: sys },
         ...history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),

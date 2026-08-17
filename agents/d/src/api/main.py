@@ -3,21 +3,13 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import Any
-
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import FastAPI
 
 from src.api.schemas import (
-    HealthResponse,
-    IngestRequest,
-    IngestResponse,
-    QueryRequest,
-    QueryResponse,
     RespondRequest,
     RespondResponse,
-    RetrievalItem,
 )
-from src.config import Settings, get_settings
+from src.config import get_settings
 from src.skills.skinner_skill import (
     SkinnerOutput,
     generate_skinner_offline_response,
@@ -31,6 +23,7 @@ SAFETY_RESPONSE = (
     "并联系一位可信任的人陪着你。如果存在即时危险，请拨打 120/110 或前往最近急诊；"
     "中国大陆也可拨打 12356。不要只依赖这段回复。"
 )
+PAUSE_RESPONSE = "我听见你累了。我们先停在这里，不继续分析，也不做任何练习。你不需要回复；等你想回来时，我们再从这里继续。"
 
 
 @asynccontextmanager
@@ -47,26 +40,6 @@ app = FastAPI(
 )
 
 
-def get_chain():
-    from src.retrieval.chain import RetrievalChain
-
-    if not getattr(app.state, "chain", None):
-        app.state.chain = RetrievalChain(get_app_settings())
-    return app.state.chain
-
-
-def get_store():
-    from src.vectorstore.qdrant_manager import QdrantStoreManager
-
-    if not getattr(app.state, "store", None):
-        app.state.store = QdrantStoreManager(get_app_settings())
-    return app.state.store
-
-
-def get_app_settings() -> Settings:
-    return getattr(app.state, "settings", None) or get_settings()
-
-
 def _environment_context(payload: RespondRequest) -> str:
     """Compress bounded note/history context for the behavioral skill."""
 
@@ -75,6 +48,8 @@ def _environment_context(payload: RespondRequest) -> str:
     ]
     if payload.profile_digest:
         parts.append(f"用户摘要：{payload.profile_digest[:1000]}")
+    if payload.shared_memory:
+        parts.append(f"跨会话用户记忆：{payload.shared_memory[:2000]}")
     if payload.note_content:
         parts.append(f"相关笔记：{payload.note_content[:2000]}")
     if payload.history:
@@ -100,6 +75,10 @@ def _skill_tags(result: SkinnerOutput) -> list[str]:
 def respond(payload: RespondRequest) -> RespondResponse:
     """Wrap the Skinner skill without entering the legacy retrieval chain."""
 
+    if payload.needs_pause:
+        return RespondResponse(agent_id="D", role_name="B.F. 斯金纳·行为塑形教练",
+            response=PAUSE_RESPONSE, skills=["fatigue-pause-detection"], sources=[],
+            degraded=False, safety_level=payload.safety_level)
     if payload.safety_level == "S3":
         return RespondResponse(
             agent_id="D",
@@ -132,65 +111,6 @@ def respond(payload: RespondRequest) -> RespondResponse:
     )
 
 
-@app.get("/health", response_model=HealthResponse)
-def health(
-    store=Depends(get_store),
-    settings: Settings = Depends(get_app_settings),
-) -> HealthResponse:
-    try:
-        points = store.count()
-        qdrant_status = "up"
-    except Exception as exc:  # noqa: BLE001 — surface connectivity for operators
-        raise HTTPException(status_code=503, detail=f"Qdrant unavailable: {exc}") from exc
-    return HealthResponse(
-        status="ok",
-        qdrant=qdrant_status,
-        collection=settings.qdrant_collection,
-        points=points,
-    )
-
-
-@app.post("/query", response_model=QueryResponse)
-def query_knowledge_base(
-    payload: QueryRequest,
-    chain=Depends(get_chain),
-) -> QueryResponse:
-    """Agent function: retrieve psychoanalytic passages with optional school/author filters."""
-    hits = chain.query(
-        question=payload.query,
-        school=payload.school,
-        author=payload.author,
-        top_n=payload.top_n,
-        rerank=payload.rerank,
-    )
-    return QueryResponse(
-        query=payload.query,
-        results=[RetrievalItem(**hit.as_dict()) for hit in hits],
-    )
-
-
-@app.post("/ingest", response_model=IngestResponse)
-def ingest_documents(
-    payload: IngestRequest,
-    settings: Settings = Depends(get_app_settings),
-) -> IngestResponse:
-    """Parse, chunk (with metadata), and upsert files from data/raw or a given path."""
-    from src.ingestion.pipeline import IngestionPipeline
-
-    source = payload.path or str(settings.data_raw_dir)
-    pipeline = IngestionPipeline(settings)
-    chunks = pipeline.ingest_path(source)
-    return IngestResponse(
-        ingested_chunks=len(chunks),
-        collection=settings.qdrant_collection,
-    )
-
-
-@app.get("/collections/{name}")
-def collection_info(
-    name: str,
-    store=Depends(get_store),
-) -> dict[str, Any]:
-    if name != store.collection:
-        raise HTTPException(status_code=404, detail="Unknown collection")
-    return {"name": name, "points": store.count()}
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok", "knowledge": "disabled"}

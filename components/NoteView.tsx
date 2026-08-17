@@ -7,6 +7,17 @@ import { getSchool } from "@/lib/personas";
 import type { Note, Profile, SchoolId } from "@/lib/types";
 import XiaoyuAvatar from "./XiaoyuAvatar";
 
+function memoryHeaders(): HeadersInit {
+  try {
+    const raw = window.localStorage.getItem("yuxingxiang-local-user");
+    const user = raw ? JSON.parse(raw) as { id?: string; displayName?: string } : null;
+    const id = user?.id || user?.displayName;
+    return id ? { "x-memory-user-id": id } : {};
+  } catch {
+    return {};
+  }
+}
+
 const MOOD: Record<number, string> = { 1: "阴", 2: "倦", 3: "平", 4: "暖", 5: "晴" };
 
 export default function NoteView({
@@ -39,7 +50,10 @@ export default function NoteView({
     setCommentsLoading(true);
     setCommentsError(false);
     try {
-      const response = await fetch(`/api/notes/${note.id}/comments`, { method: "POST" });
+      const response = await fetch(`/api/notes/${note.id}/comments`, {
+        method: "POST",
+        headers: memoryHeaders(),
+      });
       const data = await response.json();
       if (data.comments) {
         setNote((current) => ({ ...current, comments: data.comments }));
@@ -86,7 +100,7 @@ export default function NoteView({
     try {
       const response = await fetch(`/api/notes/${note.id}/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...memoryHeaders() },
         body: JSON.stringify({ school, message: text }),
       });
       const data = await response.json();

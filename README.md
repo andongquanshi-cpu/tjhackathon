@@ -45,7 +45,25 @@ AGENT_C_URL=http://127.0.0.1:8103
 AGENT_D_URL=http://127.0.0.1:8104
 AGENT_TIMEOUT_MS=20000
 DEMO_MODE=1
+MEM0_API_KEY=m0-xxx
 ```
+
+### Shared memory
+
+When `MEM0_API_KEY` is configured, the Next.js orchestration layer recalls Mem0 records by a stable browser user ID before every roundtable or deep-chat request. The same memory context is sent to all four agents, so a new chat and a different agent can use relevant information from earlier sessions. After each deep-chat turn, the orchestrator writes once with `origin_agent` and `session_id` metadata; agents never write independently, avoiding four-way duplication.
+
+Memory capture is restricted to durable preferences, recurring concerns, goals, strengths, relationships, and helpful support patterns. Diagnoses, crisis wording, and transient moods are excluded by the memory instruction. With no API key, the application continues normally with memory disabled.
+
+### Agent capability boundaries
+
+| Agent | Role | Fatigue pause | Knowledge skill |
+|---|---|---:|---:|
+| A | Freud / psychodynamic | Yes | Yes, psychoanalytic RAG |
+| B | Rogers / humanistic | Yes | No |
+| C | Bandura / social cognitive | Yes | Yes, Bandura RAG |
+| D | Skinner / behaviorist | Yes | No |
+
+For fatigue or an explicit request to stop, every agent returns a detection-only pause response. It does not continue analysis, ask a follow-up question, or provide breathing, meditation, timing, repetition, or training instructions.
 
 - A/B/C/D 固定对应弗洛伊德、罗杰斯、班杜拉、斯金纳，端口依次为 8101–8104。
 - A、C 使用各自 RAG；B 在合格人本文献入库前为 no-rag；D 只调用斯金纳 Skill。B/D 中遗留的精神分析语料已隔离，不参与 `/respond`。

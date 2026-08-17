@@ -23,7 +23,7 @@ export default function AuthControl({ compact = false }: { compact?: boolean }) 
   const login = () => {
     const displayName = name.trim();
     if (!displayName) return;
-    const next = { displayName, createdAt: new Date().toISOString() };
+    const next = { id: crypto.randomUUID(), displayName, createdAt: new Date().toISOString() };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setUser(next);
     setOpen(false);
@@ -62,7 +62,7 @@ export default function AuthControl({ compact = false }: { compact?: boolean }) 
             <button type="button" onClick={() => setOpen(false)} className="auth-close">关闭 ×</button>
             <span className="eyebrow">LOCAL PREVIEW</span>
             <h2 id="auth-title">先告诉小愈，怎么称呼你？</h2>
-            <p>这是本地体验账号，只保存在这台浏览器中，不会创建真实账户或云端同步。</p>
+            <p>Your preview account stays in this browser. When Mem0 is enabled by the operator, conversation memories are synchronized under this account ID.</p>
             <label>
               <span>你的称呼</span>
               <input
