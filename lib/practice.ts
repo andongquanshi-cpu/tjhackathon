@@ -34,9 +34,9 @@ export const FEATURE_MODULES = [
     id: "classroom" as const,
     eyebrow: "MICRO CLASS",
     title: "心理微课堂",
-    description: "轻量小知识，理解情绪与关系。",
+    description: "每次一张概念小卡片，通俗理解情绪与关系。",
     href: "/practice/classroom",
-    available: false,
+    available: true,
   },
 ] as const;
 

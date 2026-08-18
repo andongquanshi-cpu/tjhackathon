@@ -3633,6 +3633,142 @@ button:disabled {
 .practice-page--meditation .practice-host .xiaoyu-avatar { background: #d8ebf9; }
 .practice-page--breathing .practice-host .xiaoyu-avatar { background: #d7d4b1; }
 .practice-page--woodfish .practice-host .xiaoyu-avatar { background: #f1dfbd; }
+.practice-page--classroom .practice-host .xiaoyu-avatar {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.practice-page--classroom .practice-host .xiaoyu-avatar::before,
+.practice-page--classroom .practice-host .xiaoyu-avatar::after {
+  display: none;
+}
+.practice-stage--classroom {
+  max-width: 920px;
+  gap: 0.85rem;
+  padding: 1rem 1.25rem 1.5rem;
+  align-content: start;
+}
+.classroom-top {
+  display: grid;
+  gap: 0.55rem;
+  width: 100%;
+  justify-items: start;
+}
+.practice-host--classroom {
+  width: 100%;
+  gap: 0.75rem;
+}
+.practice-host--classroom h1 {
+  margin-top: 0.15rem;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+}
+.practice-host--classroom p {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+}
+.classroom-card {
+  display: grid;
+  grid-template-columns: minmax(200px, 0.9fr) minmax(0, 1.25fr);
+  gap: 1.1rem 1.4rem;
+  width: min(100%, 880px);
+  padding: 1.15rem 1.25rem 1.05rem;
+  text-align: left;
+  border: 1.5px solid rgba(81, 50, 41, 0.35);
+  border-radius: 20px;
+  background:
+    linear-gradient(165deg, rgba(255, 253, 244, 0.96), rgba(234, 215, 210, 0.55) 55%, rgba(241, 229, 223, 0.85));
+  box-shadow: 5px 6px 0 rgba(81, 50, 41, 0.08);
+}
+.classroom-card__head {
+  display: grid;
+  gap: 0.3rem;
+  align-content: start;
+  padding-right: 0.2rem;
+  border-right: 1px dashed rgba(81, 50, 41, 0.28);
+}
+.classroom-card__badge {
+  width: fit-content;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(81, 50, 41, 0.1);
+  color: rgba(81, 50, 41, 0.75);
+  font-size: 0.55rem;
+  letter-spacing: 0.14em;
+}
+.classroom-card__head h2 {
+  margin: 0.1rem 0 0;
+  font-family: ui-serif, Georgia, "Songti SC", serif;
+  font-size: clamp(1.35rem, 2.6vw, 1.7rem);
+  line-height: 1.25;
+  color: var(--journey-ink, #513229);
+}
+.classroom-card__aka {
+  margin: 0;
+  color: rgba(81, 50, 41, 0.55);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+.classroom-card__hook {
+  margin: 0.45rem 0 0;
+  color: var(--journey-ink, #513229);
+  font-family: ui-serif, Georgia, "Songti SC", serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.classroom-card__body {
+  display: grid;
+  gap: 0.7rem;
+  align-content: start;
+  min-width: 0;
+}
+.classroom-card__body > p {
+  margin: 0;
+  color: rgba(81, 50, 41, 0.78);
+  font-size: 0.84rem;
+  line-height: 1.65;
+}
+.classroom-card__body blockquote {
+  margin: 0;
+  padding: 0.7rem 0.85rem;
+  border-left: 3px solid rgba(81, 50, 41, 0.45);
+  border-radius: 0 12px 12px 0;
+  background: rgba(255, 253, 244, 0.7);
+  color: var(--journey-ink, #513229);
+  font-family: ui-serif, Georgia, "Songti SC", serif;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+.classroom-card__body blockquote span {
+  display: block;
+  margin-bottom: 0.22rem;
+  color: rgba(81, 50, 41, 0.55);
+  font-family: system-ui, sans-serif;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+}
+.classroom-card__note {
+  margin: 0;
+  color: rgba(81, 50, 41, 0.5);
+  font-size: 0.64rem;
+  line-height: 1.45;
+}
+.classroom-actions {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+  padding-top: 0.15rem;
+}
+@media (max-width: 720px) {
+  .classroom-card {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+  .classroom-card__head {
+    padding: 0 0 0.75rem;
+    border-right: 0;
+    border-bottom: 1px dashed rgba(81, 50, 41, 0.28);
+  }
+}
 
 .woodfish-ready { width: min(100%, 420px); }
 .woodfish-wish {
