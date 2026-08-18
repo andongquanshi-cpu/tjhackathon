@@ -24,9 +24,34 @@ export function getAgentId(school: SchoolId): AgentId {
   return AGENT_BY_SCHOOL[school].id;
 }
 
+/** Vercel / 生产环境无法访问本机端口；误配 127.0.0.1 会空等超时导致整页 AI 失败 */
+function isUnreachableLocalUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "0.0.0.0" ||
+      host === "::1" ||
+      host.endsWith(".local")
+    );
+  } catch {
+    return true;
+  }
+}
+
 function getAgentUrl(school: SchoolId): string | null {
   const value = process.env[AGENT_BY_SCHOOL[school].env]?.trim();
-  return value ? value.replace(/\/+$/, "") : null;
+  if (!value) return null;
+  const url = value.replace(/\/+$/, "");
+  // Vercel 会注入 VERCEL=1；此时本机 Agent 地址必须跳过，直接走 LLM 降级
+  if (process.env.VERCEL && isUnreachableLocalUrl(url)) {
+    console.warn(
+      `[agents] skip ${AGENT_BY_SCHOOL[school].env}=${url} on Vercel (unreachable); using LLM fallback`
+    );
+    return null;
+  }
+  return url;
 }
 
 function normalizeResponse(raw: unknown, expectedId: AgentId): ExternalAgentResponse {

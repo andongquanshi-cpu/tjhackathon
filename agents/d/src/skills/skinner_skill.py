@@ -503,6 +503,70 @@ def _llm_config() -> tuple[str, str, str]:
     )
 
 
+def _flatten_value(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, (int, float, bool)):
+        return str(value)
+    if isinstance(value, list):
+        return "；".join(_flatten_value(item) for item in value if item is not None)
+    if isinstance(value, dict):
+        parts: list[str] = []
+        for key, item in value.items():
+            flat = _flatten_value(item)
+            if not flat:
+                continue
+            parts.append(f"{key}：{flat}" if key else flat)
+        return "；".join(parts)
+    return str(value)
+
+
+def _normalize_agent_response(value: Any) -> str:
+    if isinstance(value, str):
+        return value.strip()
+    if not isinstance(value, dict):
+        return _flatten_value(value)
+    section_order = (
+        ("否定主观归因", "[否定主观归因]"),
+        ("重构刺激环境", "[重构刺激环境]"),
+        ("设定强化程序", "[设定强化程序]"),
+    )
+    blocks: list[str] = []
+    remaining = dict(value)
+    for key, title in section_order:
+        if key in remaining:
+            body = _flatten_value(remaining.pop(key))
+            blocks.append(f"{title}\n{body}")
+    for key, item in remaining.items():
+        body = _flatten_value(item)
+        if body:
+            blocks.append(f"[{key}]\n{body}" if key else body)
+    return "\n\n".join(blocks).strip()
+
+
+def _normalize_skinner_payload(raw: Any) -> dict[str, Any]:
+    if isinstance(raw, str):
+        raw = json.loads(raw)
+    if not isinstance(raw, dict):
+        raise TypeError("Skinner payload must be an object")
+    data = dict(raw)
+    string_fields = (
+        "target_behavior",
+        "reinforcement_strategy",
+        "controllability_assessment",
+        "minimum_success_unit",
+        "punishment_safeguards",
+    )
+    for field in string_fields:
+        if field in data:
+            data[field] = _flatten_value(data[field])
+    if "agent_response" in data:
+        data["agent_response"] = _normalize_agent_response(data["agent_response"])
+    return data
+
+
 def _call_openai_compatible(payload: SkinnerInput) -> SkinnerOutput:
     """Call an OpenAI-compatible Chat Completions endpoint with JSON Schema."""
 
@@ -510,43 +574,46 @@ def _call_openai_compatible(payload: SkinnerInput) -> SkinnerOutput:
     if not api_key:
         return _select_offline_template(payload)
 
-    request_body = {
-        "model": model,
-        "temperature": 0.2,
-        "messages": [
-            {"role": "system", "content": SKINNER_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": payload.model_dump_json(exclude_none=True),
-            },
-        ],
-        "response_format": {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "skinner_output",
-                "strict": True,
-                "schema": SkinnerOutput.model_json_schema(),
-            },
+    messages = [
+        {"role": "system", "content": SKINNER_SYSTEM_PROMPT},
+        {
+            "role": "user",
+            "content": payload.model_dump_json(exclude_none=True),
         },
-    }
-    request = Request(
-        _chat_completions_endpoint(base_url),
-        data=json.dumps(request_body, ensure_ascii=False).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
+    ]
+    # Prefer plain JSON; many OpenAI-compatible gateways reject json_schema.
+    request_variants: list[dict[str, Any]] = [
+        {"model": model, "temperature": 0.2, "messages": messages},
+        {
+            "model": model,
+            "temperature": 0.2,
+            "messages": messages,
+            "response_format": {"type": "json_object"},
         },
-        method="POST",
-    )
-
-    try:
-        with urlopen(request, timeout=60) as response:  # noqa: S310 - configured API endpoint
-            raw_response = json.loads(response.read().decode("utf-8"))
-    except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"LLM 请求失败（HTTP {exc.code}）：{detail}") from exc
-    except URLError as exc:
-        raise RuntimeError(f"无法连接 LLM 服务：{exc.reason}") from exc
+    ]
+    last_error: Exception | None = None
+    raw_response: dict[str, Any] | None = None
+    for request_body in request_variants:
+        request = Request(
+            _chat_completions_endpoint(base_url),
+            data=json.dumps(request_body, ensure_ascii=False).encode("utf-8"),
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        try:
+            with urlopen(request, timeout=60) as response:  # noqa: S310 - configured API endpoint
+                raw_response = json.loads(response.read().decode("utf-8"))
+            break
+        except HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            last_error = RuntimeError(f"LLM 请求失败（HTTP {exc.code}）：{detail}")
+        except URLError as exc:
+            last_error = RuntimeError(f"无法连接 LLM 服务：{exc.reason}")
+    if raw_response is None:
+        raise last_error or RuntimeError("LLM 请求失败")
 
     try:
         content = raw_response["choices"][0]["message"]["content"]
@@ -554,8 +621,14 @@ def _call_openai_compatible(payload: SkinnerInput) -> SkinnerOutput:
             content = "".join(
                 part.get("text", "") for part in content if isinstance(part, dict)
             )
-        return SkinnerOutput.model_validate_json(content)
-    except (KeyError, IndexError, TypeError, ValidationError) as exc:
+        if isinstance(content, str):
+            content = content.strip()
+            if content.startswith("```"):
+                content = re.sub(r"^```(?:json)?\s*", "", content)
+                content = re.sub(r"\s*```$", "", content)
+        normalized = _normalize_skinner_payload(content)
+        return SkinnerOutput.model_validate(normalized)
+    except (KeyError, IndexError, TypeError, ValidationError, json.JSONDecodeError) as exc:
         raise RuntimeError(f"LLM 返回无法解析为 SkinnerOutput：{raw_response!r}") from exc
 
 

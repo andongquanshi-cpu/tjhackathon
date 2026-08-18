@@ -376,7 +376,7 @@ export default function NoteView({
                   </div>
                 )}
 
-                {!showInviteGuide && activeComment && activeInfo && chatMessages.length === 0 && (
+                {!showInviteGuide && activeComment && activeInfo && (
                   <div className="journey-session__row is-mentor">
                     <MentorPortrait feature={activeInfo.feature} />
                     <ReplyBubble tone="mentor" size="md" title={activeInfo.name} subtitle="开场回应">

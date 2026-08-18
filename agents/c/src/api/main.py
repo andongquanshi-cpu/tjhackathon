@@ -160,8 +160,8 @@ def _chat_completion(
     if not isinstance(content, str) or not content.strip():
         raise ValueError("LLM returned an empty response")
     content = content.strip()
-    if not 120 <= len(content) <= 220:
-        raise ValueError("LLM response length is outside 120-220 characters")
+    if len(content) < 40:
+        raise ValueError("LLM returned a too-short response")
     return content
 
 
@@ -184,16 +184,8 @@ def respond(
     skills = _select_skills(payload)
     try:
         sources = _retrieve_sources(payload)
-    except Exception:  # noqa: BLE001 - conversational endpoint must stay available
-        return RespondResponse(
-            agent_id="C",
-            role_name=ROLE_NAME,
-            response=_offline_response(payload),
-            skills=skills,
-            sources=[],
-            degraded=True,
-            safety_level=payload.safety_level,
-        )
+    except Exception:  # noqa: BLE001 - keep LLM path even if RAG is unavailable
+        sources = []
 
     if not settings.openai_api_key:
         return RespondResponse(
