@@ -34,6 +34,8 @@ type ArcCarouselProps = {
   tableHint?: string;
   /** 主界面：整张撕边纸片介绍卡 */
   variant?: "default" | "scrapbook";
+  /** 初始/受控居中的人物 id（落地页热区进房时对齐对应导师卡） */
+  activeId?: string | null;
 };
 
 const STEP = 180;
@@ -47,6 +49,12 @@ function shortestDiff(index: number, active: number, length: number) {
   return index - active - length * Math.round((index - active) / length);
 }
 
+function resolveActiveIndex(people: ArcPerson[], activeId?: string | null) {
+  if (!activeId) return 0;
+  const index = people.findIndex((person) => person.id === activeId);
+  return index >= 0 ? index : 0;
+}
+
 export default function ArcCarousel({
   people,
   renderMedia,
@@ -58,6 +66,7 @@ export default function ArcCarousel({
   tableLabel = "ROUND TABLE",
   tableHint = "把最触动你的话拖到中间",
   variant = "default",
+  activeId = null,
 }: ArcCarouselProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -66,7 +75,7 @@ export default function ArcCarousel({
   const onActiveChangeRef = useRef(onActiveChange);
   const onSelectRef = useRef(onSelect);
   const goByRef = useRef<(delta: number) => void>(() => {});
-  const [activeIndex, setActiveIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(() => resolveActiveIndex(people, activeId));
   const isScrapbook = variant === "scrapbook";
 
   peopleRef.current = people;
@@ -90,7 +99,9 @@ export default function ArcCarousel({
     gsap.registerPlugin(Draggable, InertiaPlugin);
 
     const proxy = document.createElement("div");
-    gsap.set(proxy, { x: 0 });
+    const startIndex = resolveActiveIndex(peopleRef.current, activeId);
+    gsap.set(proxy, { x: -startIndex * STEP });
+    setActiveIndex(startIndex);
     const cards = cardRefs.current.filter(Boolean) as HTMLButtonElement[];
     let dragging = false;
     let startX = 0;
@@ -235,6 +246,8 @@ export default function ArcCarousel({
     window.addEventListener("resize", onResize);
     window.visualViewport?.addEventListener("resize", onResize);
     layout();
+    const startPerson = peopleRef.current[startIndex];
+    if (startPerson) onActiveChangeRef.current?.(startPerson, startIndex);
 
     return () => {
       observer.disconnect();
@@ -247,7 +260,7 @@ export default function ArcCarousel({
         if (handler) card.removeEventListener("click", handler);
       });
     };
-  }, [count, emitActive, isScrapbook]);
+  }, [count, emitActive, isScrapbook, activeId]);
 
   const peopleKey = useMemo(() => people.map((person) => person.name).join("|"), [people]);
 

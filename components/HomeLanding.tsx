@@ -23,8 +23,8 @@ const LANDING_MENTORS: {
   className: string;
 }[] = [
   {
-    id: "postmodern",
-    shortName: "斯金纳",
+    id: "humanistic",
+    shortName: "罗杰斯",
     className: "is-skinner",
   },
   {
@@ -38,8 +38,8 @@ const LANDING_MENTORS: {
     className: "is-bandura",
   },
   {
-    id: "humanistic",
-    shortName: "罗杰斯",
+    id: "postmodern",
+    shortName: "斯金纳",
     className: "is-rogers",
   },
 ];

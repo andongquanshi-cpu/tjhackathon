@@ -13,6 +13,7 @@ import MentorIntroCard from "./MentorIntroCard";
 import MentorPortrait from "./MentorPortrait";
 import ReplyBubble from "./ReplyBubble";
 import XiaoyuAvatar from "./XiaoyuAvatar";
+import XiaoyuRunLoader from "./XiaoyuRunLoader";
 
 export default function NoteView({
   initialNote,
@@ -59,7 +60,7 @@ export default function NoteView({
       const data = await response.json();
       if (data.comments) {
         setNote((current) => ({ ...current, comments: data.comments }));
-        setPreviewSchool(data.comments[0]?.school ?? null);
+        setPreviewSchool((current) => current ?? data.comments[0]?.school ?? null);
       } else {
         if (data.risk) {
           setNote((current) => ({ ...current, risk: data.risk }));
@@ -199,9 +200,9 @@ export default function NoteView({
             <h1>
               <b>CURE</b> room ——圆桌时刻
             </h1>
-            <p>
+            <p className={note.comments ? "journey-session__hero-guide" : undefined}>
               {note.comments
-                ? "① 左侧左右滑动纸片，选中想听的导师 ② 点中间卡片或下方「深聊」 ③ 右侧先看开场回应，再一对一聊。"
+                ? "左右点击/滑动选择心仪导师，进入深聊~"
                 : "小愈正在邀请导师入席。你可以先看着自己写下的这一刻。"}
             </p>
           </header>
@@ -222,6 +223,7 @@ export default function NoteView({
                 className="journey-dashboard__arc journey-session__arc"
                 variant="scrapbook"
                 people={carouselPeople}
+                activeId={chatSchool}
                 renderCard={(person) => (
                   <MentorIntroCard feature={MENTOR_DISPLAY[person.id as SchoolId].feature} />
                 )}
@@ -239,19 +241,21 @@ export default function NoteView({
               />
             ) : (
               <div className="journey-session__waiting" aria-hidden="true">
-                <div className="journey-session__empty-table">
-                  <span>{isCrisis ? "先把安全放在第一位" : "导师会晤中"}</span>
-                </div>
+                {isCrisis ? (
+                  <div className="journey-session__empty-table">
+                    <span>先把安全放在第一位</span>
+                  </div>
+                ) : (
+                  <XiaoyuRunLoader size="lg" label="导师会晤中" />
+                )}
               </div>
             )}
           </div>
 
           <div className="journey-session__finish">
-            <p>
-              {chatMessages.length
-                ? "聊到这里也可以。小愈会替你整理今天值得带走的部分。"
-                : "你可以先选择一位导师深聊，也可以直接收下四种视角。"}
-            </p>
+            {chatMessages.length > 0 && (
+              <p>聊到这里也可以。小愈会替你整理今天值得带走的部分。</p>
+            )}
             <button
               type="button"
               onClick={finishSession}

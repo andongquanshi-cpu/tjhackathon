@@ -143,21 +143,6 @@ export default function JournalPage() {
 
           <MentorMeetPanel mentors={SCHOOLS} className="journey-dashboard__mentor-meet" />
 
-          {sorted[0]?.risk && !alertDismissed && (
-            <div className={`mentor-alert alert-${sorted[0].risk.level}`}>
-              <XiaoyuAvatar variant={sorted[0].risk.level === "gentle" ? "humanistic" : "host"} size="sm" />
-              <div>
-                <strong>{sorted[0].risk.title}</strong>
-                <p>{sorted[0].risk.message}</p>
-                {sorted[0].risk.resources?.map((resource) => <small key={resource}>{resource}</small>)}
-                <div className="mentor-alert-actions">
-                  <Link href={`/notes/${sorted[0].id}`}>查看这条记录</Link>
-                  <button onClick={() => setAlertDismissed(true)}>稍后再看</button>
-                </div>
-              </div>
-            </div>
-          )}
-
           <button
             onClick={() => setComposerOpen(true)}
             className="journey-dashboard__add"
@@ -327,6 +312,43 @@ export default function JournalPage() {
         </aside>
       </div>
 
+      {ready && sorted[0]?.risk && !alertDismissed && (
+        <aside
+          className={`xiaoyu-care xiaoyu-care--${sorted[0].risk.level}`}
+          role="status"
+          aria-live="polite"
+          aria-label={sorted[0].risk.title}
+        >
+          <div className="xiaoyu-care__figure">
+            <img src="/xiaoyu-guide-cut.png" alt="" draggable={false} />
+          </div>
+          <div className="xiaoyu-care__bubble">
+            <button
+              type="button"
+              className="xiaoyu-care__close"
+              onClick={() => setAlertDismissed(true)}
+              aria-label="稍后再看"
+            >
+              ×
+            </button>
+            <strong>{sorted[0].risk.title}</strong>
+            <p>{sorted[0].risk.message}</p>
+            {sorted[0].risk.resources?.map((resource) => (
+              <small key={resource}>{resource}</small>
+            ))}
+            <div className="xiaoyu-care__actions">
+              <Link href={practiceHref("meditation", day)} className="xiaoyu-care__primary">
+                去做冥想 →
+              </Link>
+              <Link href={`/notes/${sorted[0].id}`}>查看这条记录</Link>
+              <button type="button" onClick={() => setAlertDismissed(true)}>
+                稍后再看
+              </button>
+            </div>
+          </div>
+        </aside>
+      )}
+
       {ready && showFirstGuide && (
         <div className="journey-dashboard__intro-backdrop" role="dialog" aria-modal="true" aria-labelledby="first-guide-title">
           <section className="journey-dashboard__intro">
@@ -345,45 +367,49 @@ export default function JournalPage() {
       {composerOpen && (
         <div className="composer-backdrop" role="dialog" aria-modal="true" aria-label="新建记录">
           <div className="composer-sheet">
-            <button onClick={() => setComposerOpen(false)} className="composer-close">关闭 ×</button>
-            <span className="eyebrow">TODAY&apos;S NOTE</span>
-            <h2>此刻，你最想写下什么？</h2>
-            <p>{prompt || "不必完整，也不必正确。一句话就可以开始。"}</p>
-            <textarea
-              autoFocus
-              value={content}
-              onChange={(event) => setContent(event.target.value)}
-              rows={7}
-              placeholder="把这一刻的感受、念头或小事写下来……"
-            />
-            <div className="composer-footer">
-              <div className="mood-picker-wrap">
-                <span className="mood-tag" aria-hidden="true">
-                  心情 tag
-                  <em>{MOOD_OPTIONS.find((item) => item.value === mood)?.label ?? "平稳"}</em>
-                </span>
-                <div className="mood-picker" role="group" aria-label="此刻的心情天气">
-                  {MOOD_OPTIONS.map((item) => (
-                    <button
-                      key={item.value}
-                      type="button"
-                      onClick={() => setMood(item.value)}
-                      title={`${item.mark} · ${item.label}（${item.weather}）`}
-                      aria-label={`${item.mark}，${item.label}`}
-                      aria-pressed={mood === item.value}
-                      className={mood === item.value ? "is-active" : ""}
-                    >
-                      <img src={item.icon} alt="" draggable={false} />
-                      <span>{item.mark}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <button onClick={save} disabled={!content.trim() || saving} className="primary-pill">
-                {saving ? "正在保存…" : "写好了，听听回应 →"}
+            <div className="composer-sheet__paper">
+              <button type="button" onClick={() => setComposerOpen(false)} className="composer-close" aria-label="收起">
+                收起 ×
               </button>
+              <span className="eyebrow">TODAY&apos;S NOTE</span>
+              <h2>此刻，你最想写下什么？</h2>
+              <p>{prompt || "不必完整，也不必正确。一句话就可以开始。"}</p>
+              <textarea
+                autoFocus
+                value={content}
+                onChange={(event) => setContent(event.target.value)}
+                rows={7}
+                placeholder="把这一刻的感受、念头或小事写下来……"
+              />
+              <div className="composer-footer">
+                <div className="mood-picker-wrap">
+                  <span className="mood-tag" aria-hidden="true">
+                    心情 tag
+                    <em>{MOOD_OPTIONS.find((item) => item.value === mood)?.label ?? "平稳"}</em>
+                  </span>
+                  <div className="mood-picker" role="group" aria-label="此刻的心情天气">
+                    {MOOD_OPTIONS.map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => setMood(item.value)}
+                        title={`${item.mark} · ${item.label}（${item.weather}）`}
+                        aria-label={`${item.mark}，${item.label}`}
+                        aria-pressed={mood === item.value}
+                        className={mood === item.value ? "is-active" : ""}
+                      >
+                        <img src={item.icon} alt="" draggable={false} />
+                        <span>{item.mark}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button onClick={save} disabled={!content.trim() || saving} className="primary-pill composer-submit">
+                  {saving ? "正在收下…" : "写好了，听听回应 →"}
+                </button>
+              </div>
+              {error && <p className="composer-error">{error}</p>}
             </div>
-            {error && <p className="mt-4 text-sm text-rose-700">{error}</p>}
           </div>
         </div>
       )}

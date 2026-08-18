@@ -938,6 +938,131 @@ button:disabled {
 .mentor-alert-actions { display: flex; gap: 1rem; margin-top: 0.8rem; font-size: 0.7rem; }
 .mentor-alert-actions a, .mentor-alert-actions button { border-bottom: 1px solid var(--ink); }
 
+/* 主界面：小愈举起关怀气泡（顶层浮层，不挤压版面） */
+.xiaoyu-care {
+  position: fixed;
+  z-index: 60;
+  right: clamp(0.8rem, 3vw, 1.8rem);
+  bottom: clamp(0.9rem, 3vh, 1.8rem);
+  display: flex;
+  align-items: flex-end;
+  gap: 0.15rem;
+  max-width: min(420px, calc(100vw - 1.6rem));
+  pointer-events: none;
+  animation: xiaoyu-care-in 420ms ease both;
+}
+.xiaoyu-care__figure,
+.xiaoyu-care__bubble {
+  pointer-events: auto;
+}
+.xiaoyu-care__figure {
+  flex: none;
+  width: clamp(72px, 12vw, 108px);
+  margin-bottom: 0.2rem;
+  transform: translateY(6px);
+}
+.xiaoyu-care__figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 8px 14px rgba(81, 50, 41, 0.16));
+}
+.xiaoyu-care__bubble {
+  position: relative;
+  min-width: 0;
+  padding: 0.95rem 1.05rem 0.9rem;
+  color: var(--journey-ink, #513229);
+  background: rgba(255, 253, 245, 0.96);
+  border: 1.5px solid rgba(81, 50, 41, 0.55);
+  border-radius: 22px 22px 22px 8px;
+  box-shadow: 4px 6px 0 rgba(81, 50, 41, 0.08), 0 16px 32px rgba(81, 50, 41, 0.1);
+}
+.xiaoyu-care__bubble::before {
+  position: absolute;
+  left: -8px;
+  bottom: 22px;
+  width: 14px;
+  height: 14px;
+  content: "";
+  background: rgba(255, 253, 245, 0.96);
+  border-bottom: 1.5px solid rgba(81, 50, 41, 0.55);
+  border-left: 1.5px solid rgba(81, 50, 41, 0.55);
+  transform: rotate(45deg);
+}
+.xiaoyu-care__close {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.55rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: rgba(81, 50, 41, 0.55);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.xiaoyu-care__bubble strong {
+  display: block;
+  padding-right: 1.2rem;
+  font-family: ui-serif, Georgia, "Songti SC", serif;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+.xiaoyu-care__bubble p {
+  margin-top: 0.4rem;
+  color: rgba(81, 50, 41, 0.72);
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+.xiaoyu-care__bubble small {
+  display: block;
+  margin-top: 0.35rem;
+  color: rgba(81, 50, 41, 0.62);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.xiaoyu-care__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.9rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  font-size: 0.72rem;
+}
+.xiaoyu-care__actions a:not(.xiaoyu-care__primary),
+.xiaoyu-care__actions button {
+  border-bottom: 1px solid rgba(81, 50, 41, 0.55);
+}
+.xiaoyu-care__primary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  color: #fffdf5;
+  background: var(--journey-ink, #513229);
+  border-radius: 999px;
+  font-weight: 600;
+}
+.xiaoyu-care--crisis .xiaoyu-care__bubble {
+  border-color: #8b2f2f;
+}
+.xiaoyu-care--crisis .xiaoyu-care__bubble::before {
+  border-color: #8b2f2f;
+}
+@keyframes xiaoyu-care-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 620px) {
+  .xiaoyu-care {
+    right: 0.65rem;
+    left: 0.65rem;
+    bottom: 0.75rem;
+    max-width: none;
+  }
+  .xiaoyu-care__figure {
+    width: 68px;
+  }
+}
+
 .dashboard-stage { padding: clamp(2rem, 5vw, 5rem); }
 .welcome-panel { display: flex; gap: clamp(2rem, 5vw, 5rem); align-items: center; max-width: 900px; }
 .welcome-panel h2 { margin-top: 0.5rem; font-family: ui-serif, Georgia, "Songti SC", serif; font-size: clamp(2.2rem, 4vw, 4.5rem); line-height: 1.15; }
@@ -973,41 +1098,155 @@ button:disabled {
   display: grid;
   place-items: center;
   padding: 1.2rem;
-  background: rgba(34, 33, 31, 0.72);
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(255, 253, 244, 0.55), transparent 58%),
+    color-mix(in srgb, #f1efe0 38%, rgba(81, 50, 41, 0.42));
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
 }
 
 .composer-sheet {
+  --composer-ink: #513229;
   position: relative;
-  /* 视觉约 1.2 倍；宽度按 zoom 反算，避免撑破视口 */
-  width: min(720px, calc((100vw - 2.4rem) / 1.2));
-  max-height: calc((100dvh - 2.4rem) / 1.2);
-  padding: clamp(2rem, 5vw, 4rem);
-  overflow: auto;
-  background: var(--paper);
-  border: 2px solid var(--ink);
-  zoom: 1.2;
+  width: min(720px, calc((100vw - 2.4rem) / 1.15));
+  max-height: calc((100dvh - 2.4rem) / 1.15);
+  color: var(--composer-ink);
+  background: transparent;
+  border: 0;
+  filter: drop-shadow(0 18px 34px rgba(81, 50, 41, 0.18)) drop-shadow(3px 5px 0 rgba(81, 50, 41, 0.06));
+  zoom: 1.15;
 }
 @supports not (zoom: 1) {
   .composer-sheet {
-    width: min(864px, calc(100vw - 2.4rem));
+    width: min(828px, calc(100vw - 2.4rem));
     max-height: calc(100dvh - 2.4rem);
-    transform: scale(1.2);
+    transform: scale(1.15);
     transform-origin: center center;
   }
 }
 
-.composer-close { position: absolute; top: 1rem; right: 1rem; font-size: 0.8rem; border-bottom: 1px solid var(--ink); }
-.composer-sheet .eyebrow { font-size: 0.72rem; letter-spacing: 0.16em; }
-.composer-sheet h2 { margin-top: 0.7rem; font-family: ui-serif, Georgia, "Songti SC", serif; font-size: 2rem; }
-.composer-sheet > p { margin-top: 0.5rem; color: var(--muted); font-size: 1rem; }
-.composer-sheet textarea { width: 100%; margin-top: 2rem; padding: 1.2rem 0; resize: none; background: transparent; border-block: 1px solid var(--line); outline: none; font-size: 1.05rem; line-height: 1.9; }
-.composer-footer { display: flex; gap: 1rem; align-items: center; justify-content: space-between; margin-top: 1.5rem; }
-.composer-footer .primary-pill {
-  min-height: 3.1rem;
-  padding-inline: 1.55rem;
+.composer-sheet__paper {
+  position: relative;
+  max-height: inherit;
+  padding: clamp(2.1rem, 5vw, 3.6rem) clamp(1.6rem, 4.5vw, 3.4rem) clamp(1.6rem, 4vw, 2.8rem);
+  overflow: auto;
+  background-color: #fffdf6;
+  background-image: var(--paper-grain);
+  border: 1.5px solid rgba(81, 50, 41, 0.28);
+  clip-path: polygon(
+    0% 14px,
+    2.5% 5px, 5% 13px, 7.5% 3px, 10% 12px, 12.5% 6px, 15% 14px, 17.5% 2px, 20% 11px,
+    22.5% 5px, 25% 13px, 27.5% 4px, 30% 12px, 32.5% 6px, 35% 14px, 37.5% 3px, 40% 11px,
+    42.5% 5px, 45% 13px, 47.5% 2px, 50% 12px, 52.5% 6px, 55% 14px, 57.5% 3px, 60% 11px,
+    62.5% 5px, 65% 13px, 67.5% 4px, 70% 12px, 72.5% 6px, 75% 14px, 77.5% 2px, 80% 11px,
+    82.5% 5px, 85% 13px, 87.5% 3px, 90% 12px, 92.5% 6px, 95% 14px, 97.5% 4px, 100% 10px,
+    100% 100%,
+    0% 100%
+  );
+  transform: rotate(-0.75deg);
+}
+
+.composer-close {
+  position: absolute;
+  top: 1.35rem;
+  right: 1.1rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.75rem;
+  color: rgba(81, 50, 41, 0.72);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  background: rgba(245, 232, 159, 0.55);
+  border: 1.5px solid rgba(81, 50, 41, 0.22);
+  border-radius: 999px 12px 999px 14px;
+  transform: rotate(2deg);
+  transition: background 160ms ease, color 160ms ease;
+}
+.composer-close:hover {
+  color: var(--composer-ink);
+  background: rgba(245, 232, 159, 0.9);
+}
+.composer-sheet .eyebrow {
+  display: block;
+  color: rgba(81, 50, 41, 0.55);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+.composer-sheet h2 {
+  margin-top: 0.65rem;
+  white-space: nowrap;
+  font-family: ui-serif, Georgia, "Songti SC", serif;
+  font-size: clamp(1.65rem, 3.6vw, 2.05rem);
+  line-height: 1.25;
+  color: var(--composer-ink);
+}
+.composer-sheet__paper > p {
+  margin-top: 0.55rem;
+  max-width: 36ch;
+  color: rgba(81, 50, 41, 0.62);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+.composer-sheet textarea {
+  width: 100%;
+  margin-top: 1.6rem;
+  padding: 0.15rem 0.35rem 0.6rem;
+  resize: none;
+  color: var(--composer-ink);
+  background-color: transparent;
+  background-image: repeating-linear-gradient(
+    transparent 0,
+    transparent calc(1.85em - 1px),
+    rgba(81, 50, 41, 0.12) calc(1.85em - 1px),
+    rgba(81, 50, 41, 0.12) 1.85em
+  );
+  background-attachment: local;
+  border: 0;
+  border-left: 2px solid rgba(196, 92, 84, 0.28);
+  outline: none;
+  font-size: 1.05rem;
+  line-height: 1.85;
+}
+.composer-sheet textarea::placeholder {
+  color: rgba(81, 50, 41, 0.34);
+}
+.composer-footer {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.35rem;
+  padding-top: 1rem;
+  border-top: 1.5px dashed rgba(81, 50, 41, 0.18);
+}
+.composer-footer .primary-pill,
+.composer-submit {
+  min-height: 3rem;
+  padding-inline: 1.45rem;
+  color: var(--composer-ink);
   font-size: 0.82rem;
   letter-spacing: 0.02em;
   white-space: nowrap;
+  background: color-mix(in srgb, #f5e89f 72%, #fffdf4);
+  border: 1.5px solid rgba(81, 50, 41, 0.4);
+  border-radius: 999px;
+  box-shadow: 2px 3px 0 rgba(81, 50, 41, 0.08);
+}
+.composer-footer .primary-pill:hover:not(:disabled),
+.composer-submit:hover:not(:disabled) {
+  color: #fffdf4;
+  background: var(--composer-ink);
+  transform: translateY(-1px);
+}
+.composer-footer .primary-pill:disabled,
+.composer-submit:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.composer-error {
+  margin-top: 0.85rem;
+  color: #9a3f3a;
+  font-size: 0.85rem;
 }
 .mood-picker-wrap {
   display: flex;
@@ -3393,6 +3632,105 @@ button:disabled {
 }
 .practice-page--meditation .practice-host .xiaoyu-avatar { background: #d8ebf9; }
 .practice-page--breathing .practice-host .xiaoyu-avatar { background: #d7d4b1; }
+.practice-page--woodfish .practice-host .xiaoyu-avatar { background: #f1dfbd; }
+
+.woodfish-ready { width: min(100%, 420px); }
+.woodfish-wish {
+  display: grid;
+  gap: 0.45rem;
+  width: 100%;
+  text-align: left;
+}
+.woodfish-wish span {
+  font-size: 0.78rem;
+  color: rgba(81, 50, 41, 0.72);
+}
+.woodfish-wish input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1.5px solid var(--journey-ink, #513229);
+  border-radius: 16px;
+  background: rgba(255, 253, 244, 0.72);
+  color: var(--journey-ink, #513229);
+  font-family: ui-serif, Georgia, "Songti SC", serif;
+  font-size: 1rem;
+}
+.woodfish-wish input::placeholder { color: rgba(81, 50, 41, 0.42); }
+.woodfish-slip {
+  max-width: 22rem;
+  padding: 0.55rem 1rem;
+  border: 1px dashed rgba(81, 50, 41, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 248, 230, 0.85);
+  color: var(--journey-ink, #513229) !important;
+  font-family: ui-serif, Georgia, "Songti SC", serif;
+}
+.woodfish {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(280px, 78vw);
+  height: min(230px, 64vw);
+  margin: 0.2rem 0 0.4rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.woodfish__body {
+  position: relative;
+  z-index: 2;
+  width: 88%;
+  height: auto;
+  filter: drop-shadow(4px 8px 0 rgba(81, 50, 41, 0.12));
+  transform-origin: 50% 70%;
+  transition: transform 80ms ease-out;
+}
+.woodfish.is-struck .woodfish__body { transform: scale(0.94, 1.04); }
+.woodfish__mallet {
+  position: absolute;
+  top: 8%;
+  right: 6%;
+  z-index: 3;
+  width: 14px;
+  height: 72px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #6b3e22, #b07a45);
+  transform-origin: 50% 8%;
+  transform: rotate(28deg);
+  transition: transform 90ms ease-out;
+  box-shadow: 2px 3px 0 rgba(81, 50, 41, 0.12);
+}
+.woodfish__mallet::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f0c27a, #c07a32 70%);
+  transform: translateX(-50%);
+  border: 2px solid #7a4a22;
+}
+.woodfish__mallet.is-down { transform: rotate(58deg) translateY(10px); }
+.woodfish__ripple {
+  position: absolute;
+  inset: 18% 8% 10%;
+  border: 1.5px solid rgba(81, 50, 41, 0.18);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+.woodfish.is-struck .woodfish__ripple {
+  animation: woodfish-ripple 420ms ease-out;
+}
+.woodfish.is-struck .woodfish__ripple.is-late {
+  animation-delay: 70ms;
+}
+@keyframes woodfish-ripple {
+  0% { transform: scale(0.72); opacity: 0.45; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
 
 .journey-dashboard__tools {
   position: relative;
@@ -3540,6 +3878,13 @@ button:disabled {
   font-size: clamp(0.72rem, 1vw, 0.8rem);
   line-height: 1.5;
 }
+.journey-session__hero-guide {
+  margin-top: 0.45rem;
+  color: rgba(81, 50, 41, 0.9);
+  font-size: clamp(0.84rem, 1.2vw, 0.95rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
 .journey-session__stage-center {
   display: grid;
   flex: 1 1 auto;
@@ -3630,9 +3975,12 @@ button:disabled {
   flex-wrap: wrap;
   gap: 0.55rem 1rem;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-top: 0;
   padding-top: 0.25rem;
+}
+.journey-session__finish:has(p) {
+  justify-content: space-between;
 }
 .journey-session__finish p {
   max-width: 28rem;
@@ -4159,6 +4507,97 @@ button:disabled {
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+  }
+}
+
+/* ── 小愈奔跑加载动效 ── */
+
+.xiaoyu-run {
+  display: flex;
+  position: relative;
+  align-items: center;
+  gap: 0;
+  transform: scale(var(--run-scale, 0.8));
+  transform-origin: center;
+  user-select: none;
+  pointer-events: none;
+}
+
+.xiaoyu-run__char {
+  width: 115px;
+  height: auto;
+  object-fit: contain;
+  animation: xiaoyu-bounce 0.6s ease-in-out infinite;
+}
+
+.xiaoyu-run__prints {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: xiaoyu-prints-bounce 0.6s ease-in-out infinite;
+}
+
+.xiaoyu-run__print {
+  position: absolute;
+  background: #111;
+  border-radius: 999px;
+  opacity: 0.2;
+  filter: blur(0.1px);
+  animation: print-glow 0.62s ease-in-out infinite;
+}
+
+.xiaoyu-run__print.is-p1 {
+  left: 5px;
+  top: 132px;
+  width: 13px;
+  height: 19px;
+  transform: rotate(-18deg);
+  animation-delay: 0s;
+}
+
+.xiaoyu-run__print.is-p2 {
+  left: 37px;
+  top: 149px;
+  width: 20px;
+  height: 14px;
+  transform: rotate(9deg);
+  animation-delay: 0.14s;
+}
+
+.xiaoyu-run__print.is-p3 {
+  left: 63px;
+  top: 151px;
+  width: 16px;
+  height: 16px;
+  animation-delay: 0.28s;
+}
+
+.xiaoyu-run__print.is-p4 {
+  left: 102px;
+  top: 134px;
+  width: 13px;
+  height: 13px;
+  animation-delay: 0.42s;
+}
+
+@keyframes xiaoyu-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+@keyframes xiaoyu-prints-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-3px); }
+}
+
+@keyframes print-glow {
+  0%, 100% {
+    opacity: 0.16;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
   }
 }
 

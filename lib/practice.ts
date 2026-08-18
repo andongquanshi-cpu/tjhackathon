@@ -20,7 +20,7 @@ export const FEATURE_MODULES = [
     title: "木鱼祈愿",
     description: "跟随缓慢节奏，放下一份心愿。",
     href: "/practice/woodfish",
-    available: false,
+    available: true,
   },
   {
     id: "breathing" as const,
