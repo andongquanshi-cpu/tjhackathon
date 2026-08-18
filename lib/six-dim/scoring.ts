@@ -1,9 +1,12 @@
-import { getPersona } from "./personas";
+import { getPersona12 } from "./personas";
 import {
   SIX_DIM_MAX,
   SIX_DIM_META,
   SIX_DIM_MIN,
   SIX_DIM_THRESHOLD,
+  type CoreAxis,
+  type DriveAxis,
+  type EmotionAxis,
   type SixDimKey,
 } from "./meta";
 import { SIX_DIM_QUESTIONS } from "./questions";
@@ -19,10 +22,16 @@ export interface SixDimScoreCard {
   blurb: string;
 }
 
+export interface SixDimAxes {
+  core: { score: number; label: CoreAxis };
+  drive: { score: number; label: DriveAxis };
+  emotion: { score: number; label: EmotionAxis };
+}
+
 export interface SixDimResult {
   scores: Record<SixDimKey, number>;
-  bits: string;
-  letterCode: string;
+  axes: SixDimAxes;
+  personaId: number;
   personaName: string;
   personaTagline: string;
   cards: SixDimScoreCard[];
@@ -46,6 +55,20 @@ function levelOf(score: number): SixDimLevel {
   return "low";
 }
 
+function axisCore(score: number): CoreAxis {
+  return score >= 24 ? "自稳" : "外求";
+}
+
+function axisDrive(score: number): DriveAxis {
+  return score >= 24 ? "冲锋" : "运筹";
+}
+
+function axisEmotion(score: number): EmotionAxis {
+  if (score >= 30) return "炽热";
+  if (score >= 19) return "温和";
+  return "冷静";
+}
+
 export function scoreSixDim(answers: Record<string, number>): SixDimResult {
   const scores = Object.fromEntries(SIX_DIM_META.map((d) => [d.key, 0])) as Record<SixDimKey, number>;
 
@@ -59,13 +82,17 @@ export function scoreSixDim(answers: Record<string, number>): SixDimResult {
     scores[d.key] = Math.max(SIX_DIM_MIN, Math.min(SIX_DIM_MAX, scores[d.key]));
   }
 
-  const bits = SIX_DIM_META.map((d) => (scores[d.key] >= SIX_DIM_THRESHOLD ? "1" : "0")).join("");
-  const letterParts = SIX_DIM_META.map((d) =>
-    scores[d.key] >= SIX_DIM_THRESHOLD ? d.letterA : d.letterB
-  );
-  const computedLetter =
-    `${letterParts.slice(0, 3).join("")} ${letterParts.slice(3).join("")}`.trim();
-  const persona = getPersona(bits);
+  const coreScore = scores.agency + scores.attachment;
+  const driveScore = scores.action + scores.processing;
+  const emotionScore = scores.defense + (24 - scores.decision);
+
+  const axes: SixDimAxes = {
+    core: { score: coreScore, label: axisCore(coreScore) },
+    drive: { score: driveScore, label: axisDrive(driveScore) },
+    emotion: { score: emotionScore, label: axisEmotion(emotionScore) },
+  };
+
+  const persona = getPersona12(axes.core.label, axes.drive.label, axes.emotion.label);
 
   const cards: SixDimScoreCard[] = SIX_DIM_META.map((d) => {
     const score = scores[d.key];
@@ -82,8 +109,8 @@ export function scoreSixDim(answers: Record<string, number>): SixDimResult {
 
   return {
     scores,
-    bits,
-    letterCode: persona.letterCode || computedLetter,
+    axes,
+    personaId: persona.id,
     personaName: persona.name,
     personaTagline: persona.tagline,
     cards,
@@ -95,6 +122,7 @@ export function sixDimPercent(score: number): number {
 }
 
 export function describePersonaParagraph(result: SixDimResult): string {
+  const { axes, personaName, personaTagline } = result;
   const highs = result.cards
     .filter((c) => c.level === "high")
     .map((c) => SIX_DIM_META.find((d) => d.key === c.key)?.label);
@@ -103,5 +131,5 @@ export function describePersonaParagraph(result: SixDimResult): string {
     .map((c) => SIX_DIM_META.find((d) => d.key === c.key)?.label);
   const highText = highs.length ? highs.join("、") : "暂无明显高分维度";
   const lowText = lows.length ? lows.join("、") : "各维都还算平衡";
-  return `${result.personaTagline} 你在「${highText}」上更鲜明，而「${lowText}」可能是接下来可以温柔留意的地方。这不是标签，只是一张此刻的地图。`;
+  return `你更接近「${personaName}」——${personaTagline}。三轴画像：内核${axes.core.label}、行动${axes.drive.label}、情绪${axes.emotion.label}。你在「${highText}」上更鲜明，而「${lowText}」可以温柔留意。这不是标签，只是一张此刻的地图。`;
 }

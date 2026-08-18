@@ -1,4 +1,3 @@
-import { SCHOOLS } from "@/lib/personas";
 import { currentDay, getNotes, getProfile } from "@/lib/store";
 import HomeLanding from "@/components/HomeLanding";
 
@@ -7,5 +6,5 @@ export default function Home() {
   const notes = getNotes();
   const day = currentDay(profile);
 
-  return <HomeLanding mentors={SCHOOLS} hasProfile={Boolean(profile)} day={day} notesCount={notes.length} />;
+  return <HomeLanding hasProfile={Boolean(profile)} day={day} notesCount={notes.length} />;
 }

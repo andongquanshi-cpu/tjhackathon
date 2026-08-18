@@ -73,7 +73,7 @@ export default function AssessmentPage() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         window.localStorage.removeItem(DRAFT_KEY);
-        router.push("/assessment/result");
+        router.push("/profile?new=1");
       } else {
         setError(data.error ?? "暂时无法保存，请稍后再试");
       }
@@ -92,7 +92,7 @@ export default function AssessmentPage() {
     <main className="assessment-shell min-h-screen px-5 py-8">
       <header className="mx-auto flex max-w-5xl items-center justify-between">
         <button
-          onClick={() => (step === 0 ? router.push("/") : setStep((value) => value - 1))}
+          onClick={() => (step === 0 ? router.push("/journal") : setStep((value) => value - 1))}
           className="line-button"
         >
           ← {step === 0 ? "暂时不测试" : "上一题"}
@@ -163,7 +163,7 @@ export default function AssessmentPage() {
         <div className="mt-10 flex items-center justify-end gap-4">
           {error && <p className="text-sm text-rose-700">{error}</p>}
           <button onClick={submit} disabled={submitting} className="primary-pill">
-            {submitting ? "正在整理…" : done ? "完成，查看结果 →" : "下一题 →"}
+            {submitting ? "正在整理…" : done ? "完成，生成画像 →" : "下一题 →"}
           </button>
         </div>
       </section>

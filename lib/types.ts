@@ -21,19 +21,28 @@ export type SixDimKey =
   | "processing"
   | "decision";
 
+export interface SixDimAxesProfile {
+  core: { score: number; label: "自稳" | "外求" };
+  drive: { score: number; label: "冲锋" | "运筹" };
+  emotion: { score: number; label: "炽热" | "温和" | "冷静" };
+}
+
 export interface SixDimProfile {
   /** 各维 4-20 分 */
   scores: Record<SixDimKey, number>;
-  /** 6 位二进制，如 111011 */
-  bits: string;
-  /** 字母代码，如 ASO PRL */
-  letterCode: string;
+  /** V4 三根合成轴 */
+  axes: SixDimAxesProfile;
+  /** 12 型编号 1-12 */
+  personaId: number;
   personaName: string;
   personaTagline: string;
   assessedAt: string;
   answers?: Record<string, number>;
   /** AI / 模板报告正文 */
   report?: string;
+  /** 小愈深度分析（仅在详细分析页展示） */
+  aiReading?: string;
+  aiReadingAt?: string;
 }
 
 export interface SchoolComment {
@@ -72,11 +81,43 @@ export interface RiskSignal {
   resources?: string[];
 }
 
-export interface SessionFeedback {
+export interface MentorTalkSummary {
+  school: SchoolId;
+  mentorName: string;
+  /** 含用户问题与导师回答的概括 */
   summary: string;
-  highlights: string[];
-  suggestedAction: string;
+  /** 用于排序的对话体量（字数） */
+  volume: number;
+}
+
+export interface SessionFeedback {
+  /** 如：2026/08/18 14/30/05 to 15/12/33 */
+  timeRange: string;
+  /** 心情标签 */
+  moodLabel: string;
+  /** user=进入时选择；ai=根据对话归纳 */
+  moodSource: "user" | "ai";
+  /** 谈话内容，按对话量从多到少 */
+  talkSummaries: MentorTalkSummary[];
+  /** 导师建议列表 */
+  suggestions: string[];
+  /** 小愈的话：针对心情的开导一句 */
+  xiaoyuNote: string;
   createdAt: string;
+}
+
+export function isSessionFeedbackV2(value: unknown): value is SessionFeedback {
+  if (!value || typeof value !== "object") return false;
+  const f = value as Partial<SessionFeedback>;
+  return (
+    typeof f.timeRange === "string" &&
+    typeof f.moodLabel === "string" &&
+    (f.moodSource === "user" || f.moodSource === "ai") &&
+    Array.isArray(f.talkSummaries) &&
+    Array.isArray(f.suggestions) &&
+    typeof f.xiaoyuNote === "string" &&
+    typeof f.createdAt === "string"
+  );
 }
 
 export interface DailyGuideProgress {

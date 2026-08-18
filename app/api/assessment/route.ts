@@ -25,8 +25,8 @@ export async function POST(req: Request) {
     updatedAt: now,
     sixDim: {
       scores: result.scores,
-      bits: result.bits,
-      letterCode: result.letterCode,
+      axes: result.axes,
+      personaId: result.personaId,
       personaName: result.personaName,
       personaTagline: result.personaTagline,
       assessedAt: now,
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     strengths: existing?.strengths ?? [],
     timeline: [
       ...(existing?.timeline ?? []),
-      `完成六维测评：${result.personaName}（${result.letterCode}）`,
+      `完成六维测评：${result.personaName}（${result.axes.core.label}·${result.axes.drive.label}·${result.axes.emotion.label}）`,
     ].slice(-30),
   };
 

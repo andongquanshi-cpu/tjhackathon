@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { DailyGuideProgress, Note } from "@/lib/types";
+import { isSessionFeedbackV2 } from "@/lib/types";
 import type { DailyGuide } from "@/lib/prompts";
 import XiaoyuAvatar from "./XiaoyuAvatar";
 
@@ -46,10 +47,11 @@ export default function DayDetailView({
           <div className="day-insight fade-up">
             <span className="eyebrow">小愈的观察</span>
             <p>
-              {latest?.feedback?.summary ??
-                (latest
+              {isSessionFeedbackV2(latest?.feedback)
+                ? latest.feedback.xiaoyuNote
+                : latest
                   ? `你在这一天留下了「${latest.content.slice(0, 54)}${latest.content.length > 54 ? "…" : ""}」。它已经成为这段旅程的一部分。`
-                  : "这一天还没有留下文字。空白并不代表落后，你可以从今天补上一句，也可以允许它只是空白。")}
+                  : "这一天还没有留下文字。空白并不代表落后，你可以从今天补上一句，也可以允许它只是空白。"}
             </p>
           </div>
         )}
@@ -66,7 +68,7 @@ export default function DayDetailView({
           {notes.length === 0 ? (
             <div className="day-empty">
               <p>这一天还没有记录。</p>
-              <Link href="/journal">去主界面写下一句 →</Link>
+              <Link href="/journal">去主界面记下这一刻 →</Link>
             </div>
           ) : (
             <div className="day-note-list">
@@ -84,10 +86,10 @@ export default function DayDetailView({
           )}
         </section>
 
-        {latest?.feedback && (
+        {isSessionFeedbackV2(latest?.feedback) && latest.feedback.suggestions.length > 0 && (
           <section className="day-section day-action">
             <span className="eyebrow">留给这一天的一小步</span>
-            <p>{latest.feedback.suggestedAction}</p>
+            <p>{latest.feedback.suggestions[0]}</p>
           </section>
         )}
       </article>

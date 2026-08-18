@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { dayPrompt } from "@/lib/prompts";
 import { evaluateRisk } from "@/lib/risk";
+import { SCHOOL_IDS } from "@/lib/personas";
 import { addNote, currentDay, getNotes, getProfile } from "@/lib/store";
-import type { Note } from "@/lib/types";
+import type { Note, SchoolId } from "@/lib/types";
 
 export async function GET() {
   return NextResponse.json({ notes: getNotes() });
@@ -18,6 +19,10 @@ export async function POST(req: Request) {
   const mood = Math.max(1, Math.min(5, Number(body.mood) || 3));
   const profile = getProfile();
   const day = currentDay(profile);
+  const selectedSchool =
+    typeof body.selectedSchool === "string" && SCHOOL_IDS.includes(body.selectedSchool as SchoolId)
+      ? (body.selectedSchool as SchoolId)
+      : undefined;
 
   const note: Note = {
     id: randomUUID(),
@@ -28,6 +33,7 @@ export async function POST(req: Request) {
     createdAt: new Date().toISOString(),
     comments: null,
     conversations: {},
+    selectedSchool,
     risk: evaluateRisk(content, profile),
     feedback: null,
   };

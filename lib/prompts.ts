@@ -75,7 +75,7 @@ export const DAILY_GUIDES: DailyGuide[] = DAY_PROMPTS.map((prompt, index) => {
         title: "记录与标记",
         description: prompt,
         duration: "约 3 分钟",
-        hint: "点文字去写下一句；圆点用来勾选完成",
+        hint: "点文字去记下这一刻；圆点用来勾选完成",
       },
       {
         id: `day-${day}-practice`,

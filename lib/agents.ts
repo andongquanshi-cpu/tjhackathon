@@ -19,7 +19,7 @@ export function profileDigest(p: Profile | null): string {
   const dims = SIX_DIM_META.map(
     (d) => `${d.label}${Math.round(p.sixDim.scores[d.key])}`
   ).join("、");
-  return `人格：${p.sixDim.personaName}（${p.sixDim.letterCode} / ${p.sixDim.bits}）。六维得分：${dims}。核心议题：${p.coreIssues.join("、") || "暂无"}。认知模式：${p.cognitivePatterns.join("、") || "暂无"}。优势资源：${p.strengths.join("、") || "暂无"}。`;
+  return `人格：${p.sixDim.personaName}（${p.sixDim.axes.core.label}·${p.sixDim.axes.drive.label}·${p.sixDim.axes.emotion.label}）。六维得分：${dims}。核心议题：${p.coreIssues.join("、") || "暂无"}。认知模式：${p.cognitivePatterns.join("、") || "暂无"}。优势资源：${p.strengths.join("、") || "暂无"}。`;
 }
 
 // ---------------- Mock（仅当 LLM 不可用时兜底） ----------------

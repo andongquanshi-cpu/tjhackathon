@@ -23,7 +23,7 @@ function ensureSeeded(): void {
 
 function normalizeProfile(profile: Profile | null | undefined): Profile | null {
   if (!profile) return null;
-  if (!profile.sixDim?.scores) return null;
+  if (!profile.sixDim?.scores || !profile.sixDim?.axes) return null;
   return profile;
 }
 

@@ -8,6 +8,10 @@ export type SixDimKey =
 
 export type QuestionKind = "scenario" | "likert";
 
+export type CoreAxis = "自稳" | "外求";
+export type DriveAxis = "冲锋" | "运筹";
+export type EmotionAxis = "炽热" | "温和" | "冷静";
+
 export interface ScenarioOption {
   key: "A" | "B" | "C" | "D" | "E";
   text: string;
@@ -20,9 +24,7 @@ export interface SixDimQuestion {
   dim: SixDimKey;
   kind: QuestionKind;
   text: string;
-  /** 情景题选项 */
   options?: ScenarioOption[];
-  /** Likert 反向计分 */
   reverse?: boolean;
 }
 
@@ -33,8 +35,6 @@ export const SIX_DIM_META: {
   color: string;
   group: "self" | "action" | "cognition";
   groupLabel: string;
-  letterA: string;
-  letterB: string;
   poleA: string;
   poleB: string;
   blurbA: string;
@@ -43,93 +43,81 @@ export const SIX_DIM_META: {
 }[] = [
   {
     key: "agency",
-    label: "主体定位",
+    label: "自我认同",
     short: "D1",
     color: "#c45c3e",
     group: "self",
     groupLabel: "自我模型",
-    letterA: "A",
-    letterB: "F",
-    poleA: "内部主体",
-    poleB: "外部附庸",
-    blurbA: "自带导航系统，不需要别人告诉你往哪走。",
-    blurbB: "GPS 交给外界了，别人说往左你就不往右。",
-    hint: "你的自我评价标准是内生的还是外引的？",
+    poleA: "自我认同型",
+    poleB: "他人认同型",
+    blurbA: "对自己的价值有内在确认，不太需要外界肯定来证明自己。",
+    blurbB: "自我价值感更多依赖外部评价和他人认可。",
+    hint: "你更靠内在确认自己，还是靠外界反馈？",
   },
   {
     key: "attachment",
-    label: "依恋安全",
+    label: "依恋风格",
     short: "D2",
     color: "#3d7ea6",
     group: "self",
     groupLabel: "自我模型",
-    letterA: "S",
-    letterB: "N",
-    poleA: "安全信任",
-    poleB: "依赖恐惧",
-    blurbA: "朋友三小时不回消息？人可能在忙，你可能在睡觉。",
-    blurbB: "对方已读不回 = 脑内灾难片首映。",
-    hint: "亲密关系中你安然自处还是时刻警觉被抛弃？",
+    poleA: "安全型",
+    poleB: "焦虑型",
+    blurbA: "在关系中感到安全，既能亲密也能独立。",
+    blurbB: "在关系中容易焦虑，害怕被抛弃或不被爱。",
+    hint: "亲密关系里你安稳，还是容易紧绷？",
   },
   {
     key: "defense",
-    label: "防御倾向",
+    label: "情感外露",
     short: "D3",
     color: "#6b8f71",
     group: "action",
-    groupLabel: "行动模型",
-    letterA: "O",
-    letterB: "W",
-    poleA: "开放卷入",
-    poleB: "情绪隔离",
-    blurbA: "哭就哭，笑就笑，情绪不是bug是feature。",
-    blurbB: "铠甲24小时在线，连哭都要先预约。",
-    hint: "面对脆弱时你敢真实流露还是戴上铠甲硬扛？",
+    groupLabel: "表达模型",
+    poleA: "外放型",
+    poleB: "内敛型",
+    blurbA: "情绪自然流露，开心难过都写在脸上。",
+    blurbB: "情绪内敛克制，不轻易向外展示内心状态。",
+    hint: "情绪更愿意流露，还是习惯收着？",
   },
   {
     key: "action",
-    label: "行动模式",
+    label: "行动力",
     short: "D4",
     color: "#b0892e",
     group: "action",
-    groupLabel: "行动模型",
-    letterA: "G",
-    letterB: "P",
-    poleA: "现实落地",
-    poleB: "精神内耗",
-    blurbA: "拆成第一件小事就开干，边做边想。",
-    blurbB: "想了一万遍怎么开始，结果还是没开始。",
-    hint: "面对复杂任务你先动手还是先在脑子里空转？",
+    groupLabel: "表达模型",
+    poleA: "行动派",
+    poleB: "思考派",
+    blurbA: "倾向于先行动再调整，执行力强。",
+    blurbB: "倾向于先想清楚再行动，谋定后动。",
+    hint: "你更常先动手，还是先想清楚？",
   },
   {
     key: "processing",
-    label: "信息加工",
+    label: "现实主义",
     short: "D5",
     color: "#7a6bb0",
     group: "cognition",
     groupLabel: "认知模型",
-    letterA: "R",
-    letterB: "V",
-    poleA: "体验感官",
-    poleB: "概念直觉",
-    blurbA: "数据、细节、流程——看得见摸得着的才踏实。",
-    blurbB: "脑洞、理论、未来——看不见的才性感。",
-    hint: "你天然关注细节现实还是被抽象脑洞吸引？",
+    poleA: "务实型",
+    poleB: "想象型",
+    blurbA: "关注实际、具体的事物，脚踏实地。",
+    blurbB: "关注可能性、想象和抽象概念，思维跳跃。",
+    hint: "你更贴地务实，还是爱脑洞想象？",
   },
   {
     key: "decision",
-    label: "决策驱动",
+    label: "理性思考",
     short: "D6",
     color: "#8b5a4a",
     group: "cognition",
     groupLabel: "认知模型",
-    letterA: "L",
-    letterB: "H",
-    poleA: "逻辑结构",
-    poleB: "价值情感",
-    blurbA: "对事不对人，规则面前六亲不认。",
-    blurbB: "对人不对事，大家的感受比效率重要。",
-    hint: "做决定时你优先逻辑效率还是人的感受？",
+    poleA: "理性型",
+    poleB: "感性型",
+    blurbA: "做决定时以逻辑分析为主，客观冷静。",
+    blurbB: "做决定时以感受和价值为主，同理心强。",
+    hint: "决策更靠逻辑，还是更靠感受？",
   },
 ];
 
@@ -141,7 +129,6 @@ export const LIKERT_LABELS = [
   { v: 5, label: "非常同意" },
 ] as const;
 
-/** 阈值：>=12 极性 A，<12 极性 B */
 export const SIX_DIM_THRESHOLD = 12;
 export const SIX_DIM_MAX = 20;
 export const SIX_DIM_MIN = 4;

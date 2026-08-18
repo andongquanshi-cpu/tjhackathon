@@ -43,7 +43,7 @@ export const FEATURE_MODULES = [
 /** 纸卷三条任务 → 引导去向 */
 export function guideTaskAction(taskId: string): GuideAction {
   if (taskId.endsWith("-record")) {
-    return { kind: "compose", label: "去写下一句" };
+    return { kind: "compose", label: "去记下这一刻" };
   }
   if (taskId.endsWith("-practice")) {
     return {

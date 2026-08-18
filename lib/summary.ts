@@ -22,7 +22,7 @@ export function mockSummary(profile: Profile, notes: Note[], phase: number): str
 
 ${noteLines}
 
-六维画像：${profile.sixDim ? `${profile.sixDim.personaName}（${profile.sixDim.letterCode}）` : "未测评"}；维度：${dims}。
+六维画像：${profile.sixDim ? `${profile.sixDim.personaName}（${profile.sixDim.axes.core.label}·${profile.sixDim.axes.drive.label}·${profile.sixDim.axes.emotion.label}）` : "未测评"}；维度：${dims}。
 
 目前最常出现的议题是「${topIssue}」，而我看到你身上一直亮着的资源是「${strength}」——它不是别人给的，是你自己带进来的。
 

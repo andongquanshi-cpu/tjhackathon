@@ -21,7 +21,7 @@ export default function CalendarPage() {
       <section className="calendar-heading">
         <div>
           <span className="eyebrow">YOUR 21 DAYS</span>
-          <h1>慢慢走过的日子</h1>
+          <h1>在Inside Out 走过的日子</h1>
           <p>{startLabel} — {endLabel} · 已留下 {completeDays} 天足迹</p>
         </div>
         <div className="calendar-legend">
